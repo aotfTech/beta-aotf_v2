@@ -3,7 +3,7 @@ import OurServices from "@/components/OurServices";
 import Testimonials from "@/components/Testimonials";
 import ImageSlider from "@/components/ImageSlider";
 import HeroDescription from "@/components/HeroDescription";
-import Counter from "@/components/counter";
+import Counter from "@/components/Counter";
 import { TimelineDemo } from "@/components/aceternity/TimelineDemo";
 import Footer from "@/components/Footer";
 import LeadershipCard from "@/components/home/LeadershipCard";

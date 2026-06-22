@@ -8,25 +8,16 @@ export function TimelineDemo() {
         <div>
           <p className="mb-4 text-md font-normal text-neutral-800 md:text-sm dark:text-neutral-200">
             Personalized 1:1 tutoring that matches students with verified
-            educators for subject-focused learning, exam preparation, and
-            steady progress tracking.
+            educators for subject-focused learning, exam preparation, and steady
+            progress tracking.
           </p>
-          <div className="grid grid-cols-2 gap-4">
-            <img
-              src="./connect.png"
-              alt="connect"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover md:h-44 lg:h-60"
-            />
-            <img
-              src="./our_services.png"
-              alt="services"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover md:h-44 lg:h-60"
-            />
-          </div>
+          <img
+            src="https://res.cloudinary.com/dzko1daqg/image/upload/v1782152974/One-to-One_Tutoring_ouqti6.png"
+            alt="connect"
+            width={500}
+            height={500}
+            className="h-60 w-full rounded-lg object-contain md:h-44 lg:h-60"
+          />
         </div>
       ),
     },
@@ -43,22 +34,13 @@ export function TimelineDemo() {
             Flexible schedules and group learning help students build depth
             while keeping costs accessible.
           </p>
-          <div className="grid grid-cols-2 gap-4">
-            <img
-              src="./our_services.png"
-              alt="batch"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover md:h-44 lg:h-60"
-            />
-            <img
-              src="./connect.png"
-              alt="batch-2"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover md:h-44 lg:h-60"
-            />
-          </div>
+          <img
+            src="https://res.cloudinary.com/dzko1daqg/image/upload/v1782152974/Batch_Tuition_Coaching_ge31hv.png"
+            alt="batch"
+            width={500}
+            height={500}
+            className="h-60 w-full rounded-lg object-contain md:h-44 lg:h-60"
+          />
         </div>
       ),
     },
@@ -82,22 +64,13 @@ export function TimelineDemo() {
               ✅ Progress reports and parent communication
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <img
-              src="./connect.png"
-              alt="doorstep"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover md:h-44 lg:h-60"
-            />
-            <img
-              src="./our_services.png"
-              alt="doorstep-2"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover md:h-44 lg:h-60"
-            />
-          </div>
+          <img
+            src="./connect.png"
+            alt="doorstep"
+            width={500}
+            height={500}
+            className="h-60 w-full rounded-lg object-contain md:h-44 lg:h-60"
+          />
         </div>
       ),
     },
@@ -106,9 +79,8 @@ export function TimelineDemo() {
       content: (
         <div>
           <p className="mb-4 text-md font-normal text-neutral-800 md:text-sm dark:text-neutral-200">
-            Courses and tutors across grades, subjects, and examination boards
-            — from foundational early learning to competitive exam
-            preparation.
+            Courses and tutors across grades, subjects, and examination boards —
+            from foundational early learning to competitive exam preparation.
           </p>
           <div className="mb-8">
             <div className="flex items-center gap-2 text-xs text-neutral-700 md:text-sm dark:text-neutral-300">
@@ -118,22 +90,13 @@ export function TimelineDemo() {
               ✅ Curriculum-mapped lesson plans and assessments
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <img
-              src="./our_services.png"
-              alt="coverage"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover md:h-44 lg:h-60"
-            />
-            <img
-              src="./connect.png"
-              alt="coverage-2"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover md:h-44 lg:h-60"
-            />
-          </div>
+          <img
+            src="./our_services.png"
+            alt="coverage"
+            width={500}
+            height={500}
+            className="h-60 w-full rounded-lg object-contain md:h-44 lg:h-60"
+          />
         </div>
       ),
     },
@@ -153,27 +116,16 @@ export function TimelineDemo() {
               ✅ Practical skill-building workshops
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <img
-              src="./our_services.png"
-              alt="extracurricular"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover md:h-44 lg:h-60"
-            />
-            <img
-              src="./connect.png"
-              alt="extracurricular-2"
-              width={500}
-              height={500}
-              className="h-20 w-full rounded-lg object-cover md:h-44 lg:h-60"
-            />
-          </div>
+          <img
+            src="./our_services.png"
+            alt="extracurricular"
+            width={500}
+            height={500}
+            className="h-60 w-full rounded-lg object-contain md:h-44 lg:h-60"
+          />
         </div>
       ),
     },
   ];
-  return (
-      <Timeline data={data} />
-  );
+  return <Timeline data={data} />;
 }
