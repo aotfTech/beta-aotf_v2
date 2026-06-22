@@ -65,7 +65,7 @@ export function TimelineDemo() {
             </div>
           </div>
           <img
-            src="./connect.png"
+            src="https://res.cloudinary.com/dzko1daqg/image/upload/v1782152974/Home_Tutoring_Doorstep_Service_wrqltc.jpg"
             alt="doorstep"
             width={500}
             height={500}
@@ -91,7 +91,7 @@ export function TimelineDemo() {
             </div>
           </div>
           <img
-            src="./our_services.png"
+            src="https://res.cloudinary.com/dzko1daqg/image/upload/v1782152974/Coverage_Across_Classes_Subjects_Boards_p3rsgr.avif"
             alt="coverage"
             width={500}
             height={500}
@@ -117,7 +117,7 @@ export function TimelineDemo() {
             </div>
           </div>
           <img
-            src="./our_services.png"
+            src="https://res.cloudinary.com/dzko1daqg/image/upload/v1782152974/Extracurricular_Skill_Development_cxnolo.avif"
             alt="extracurricular"
             width={500}
             height={500}
