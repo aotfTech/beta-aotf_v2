@@ -10,6 +10,7 @@ import {
 } from "@/lib/api-utils";
 import Admin from "@/lib/models/Admin";
 import Source from "@/lib/models/Source";
+import Referral from "@/lib/models/Referral";
 import dbConnect from "@/lib/db";
 import { createPostSchema, listPostsSchema } from "@/lib/validations/post";
 import { sourceLists } from "@/lib/validations/forms";
@@ -77,10 +78,24 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+    if (input.source === "referral" && !input.referralUserName?.trim()) {
+      return NextResponse.json(
+        { error: "Referral user name is required when source is referral" },
+        { status: 400 },
+      );
+    }
     const post = await createPost({
       ...input,
       createdByAdminClerkId: currentAdmin.clerkId,
     });
+
+    if (input.source === "referral" && input.referralUserName?.trim()) {
+      await Referral.create({
+        postId: post.postId,
+        referralUserName: input.referralUserName.trim(),
+        createdByAdminClerkId: currentAdmin.clerkId,
+      });
+    }
 
     await logActivity({
       admin: currentAdmin,

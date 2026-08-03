@@ -28,6 +28,10 @@ export interface IApplicantSnapshot {
   email: string;
   phone: string;
   avatarUrl?: string | null;
+  board?: string | null;
+  qualification?: string | null;
+  teachingExp?: string | null;
+  address?: string | null;
 }
 
 const ApplicantSnapshotSchema = new Schema<IApplicantSnapshot>(
@@ -36,6 +40,10 @@ const ApplicantSnapshotSchema = new Schema<IApplicantSnapshot>(
     email: { type: String, required: true },
     phone: { type: String, required: true },
     avatarUrl: { type: String, default: null },
+    board: { type: String, default: null },
+    qualification: { type: String, default: null },
+    teachingExp: { type: String, default: null },
+    address: { type: String, default: null },
   },
   { _id: false },
 );

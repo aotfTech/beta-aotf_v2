@@ -3,6 +3,7 @@ import dbConnect from "@/lib/db";
 import Post, { type PostStatus, type IPost } from "@/lib/models/Post";
 import Enquiry from "@/lib/models/Enquiry";
 import Invoice from "@/lib/models/Invoice";
+import Referral from "@/lib/models/Referral";
 import { ConflictError, NotFoundError } from "@/lib/errors";
 import { escapeRegex } from "@/lib/utils";
 import {
@@ -39,6 +40,7 @@ type PostLean = Omit<IPost, keyof Document>;
 
 export type PostWithEnquiryReference = PostLean & {
   enquiryReferenceId?: string | null;
+  referralUserName?: string | null;
   author?: AdminAuthorSummary | null;
   invoiceId?: string | null;
 };
@@ -141,6 +143,29 @@ async function attachPostAuthors<
   }));
 }
 
+async function attachReferralDetails<
+  T extends { postId: string },
+>(posts: T[]): Promise<Array<T & { referralUserName: string | null }>> {
+  const postIds = posts.map((post) => post.postId);
+  if (postIds.length === 0) {
+    return posts.map((post) => ({ ...post, referralUserName: null }));
+  }
+
+  const referrals = await Referral.find(
+    { postId: mongoose.trusted({ $in: postIds }) },
+    { postId: 1, referralUserName: 1 },
+  ).lean();
+
+  const referralMap = new Map(
+    referrals.map((referral) => [referral.postId, referral.referralUserName]),
+  );
+
+  return posts.map((post) => ({
+    ...post,
+    referralUserName: referralMap.get(post.postId) ?? null,
+  }));
+}
+
 async function attachInvoiceIds<
   T extends { postId: string },
 >(posts: T[]): Promise<Array<T & { invoiceId: string | null }>> {
@@ -214,7 +239,8 @@ export async function getPostByPostId(
   }
 
   const [postWithEnquiryReference] = await attachEnquiryReferences([post]);
-  const [enrichedPost] = await attachPostAuthors([postWithEnquiryReference]);
+  const [postWithReferral] = await attachReferralDetails([postWithEnquiryReference]);
+  const [enrichedPost] = await attachPostAuthors([postWithReferral]);
   const [withInvoice] = await attachInvoiceIds([enrichedPost]);
   return withInvoice;
 }
@@ -233,7 +259,8 @@ export async function getPostById(
   }
 
   const [postWithEnquiryReference] = await attachEnquiryReferences([post]);
-  const [enrichedPost] = await attachPostAuthors([postWithEnquiryReference]);
+  const [postWithReferral] = await attachReferralDetails([postWithEnquiryReference]);
+  const [enrichedPost] = await attachPostAuthors([postWithReferral]);
   const [withInvoice] = await attachInvoiceIds([enrichedPost]);
   return withInvoice;
 }
@@ -330,7 +357,8 @@ export async function listPosts(
   ]);
 
   const postsWithEnquiryReferences = await attachEnquiryReferences(posts);
-  const enrichedPosts = await attachPostAuthors(postsWithEnquiryReferences);
+  const postsWithReferral = await attachReferralDetails(postsWithEnquiryReferences);
+  const enrichedPosts = await attachPostAuthors(postsWithReferral);
   const finalPosts = await attachInvoiceIds(enrichedPosts);
 
   return {

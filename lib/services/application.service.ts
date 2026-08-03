@@ -10,6 +10,8 @@ import Application, {
 import Job, { type IJob } from "@/lib/models/Job";
 import Post, { type IPost } from "@/lib/models/Post";
 import User from "@/lib/models/User";
+import Profile from "@/lib/models/Profile";
+import OnboardingDetails from "@/lib/models/OnboardingDetails";
 import { ConflictError, NotFoundError } from "@/lib/errors";
 import { ensureUserRecord } from "@/lib/utils/ensure-user";
 import {
@@ -140,6 +142,55 @@ async function attachApplicantAvatars(
     };
 
     return nextApplication as IApplication;
+  });
+}
+
+async function attachApplicantDetails(
+  applications: IApplication[],
+): Promise<IApplication[]> {
+  const profileIds = Array.from(
+    new Set(applications.map((a) => a.profileId).filter(Boolean)),
+  );
+
+  const validObjectIds = profileIds
+    .filter((id) => mongoose.Types.ObjectId.isValid(id))
+    .map((id) => new mongoose.Types.ObjectId(id));
+
+  const profiles = validObjectIds.length
+    ? await Profile.find({ _id: mongoose.trusted({ $in: validObjectIds }) }).lean()
+    : [];
+
+  const clerkIds = profiles.map((p) => p.clerkId).filter(Boolean) as string[];
+
+  const onboardings = clerkIds.length
+    ? await OnboardingDetails.find({ clerkId: mongoose.trusted({ $in: clerkIds }) }).lean()
+    : [];
+
+  const profileMap = new Map(profiles.map((p) => [String(p._id), p]));
+  const onboardingMap = new Map(
+    onboardings.map((o) => [o.clerkId as string, o]),
+  );
+
+  return applications.map((app) => {
+    const snap = app.applicantSnapshot || ({} as IApplicantSnapshot & Record<string, any>);
+    const profile = profileMap.get(String(app.profileId));
+    const onboarding = profile ? onboardingMap.get(profile.clerkId ?? "") : undefined;
+
+    const board = snap.board ?? profile?.board ?? onboarding?.board ?? null;
+    const qualification = snap.qualification ?? profile?.qualification ?? onboarding?.qualification ?? null;
+    const teachingExp = snap.teachingExp ?? profile?.teachingExp ?? onboarding?.teachingExp ?? null;
+    const address = snap.address ?? profile?.address ?? onboarding?.address ?? null;
+
+    return {
+      ...app,
+      applicantSnapshot: {
+        ...snap,
+        board,
+        qualification,
+        teachingExp,
+        address,
+      },
+    } as IApplication;
   });
 }
 
@@ -480,10 +531,11 @@ export async function getApplicationsByPostId(
     .lean<IApplication[]>();
 
   const enrichedApplications = await attachApplicantAvatars(applications);
+  const detailedApplications = await attachApplicantDetails(enrichedApplications);
 
   return {
-    applications: enrichedApplications,
-    total: enrichedApplications.length,
+    applications: detailedApplications,
+    total: detailedApplications.length,
   };
 }
 

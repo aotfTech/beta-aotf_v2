@@ -215,7 +215,7 @@ export const sourceLists = [
   { key: "just_dial", label: "Just Dial" },
   { key: "sulekha", label: "Sulekha" },
   { key: "urban_pro", label: "Urban Pro" },
-  { key: "facebook", label: "Facebook" },
+  { key: "social_media", label: "Social Media" },
   { key: "referral", label: "Referral" },
   { key: "other", label: "Other" },
 ] as const;
@@ -230,6 +230,7 @@ export const tuitionFormDefaults: {
   guardianName: string;
   guardianPhone: string;
   source: SourceKey;
+  referralUserName: string;
   students: { class: string; subject: string; board: string }[];
   missingSubjects: string[];
   remuneration: string;
@@ -244,6 +245,7 @@ export const tuitionFormDefaults: {
   guardianName: "",
   guardianPhone: "",
   source: "just_dial",
+  referralUserName: "",
   students: [{ class: "", subject: "", board: "" }],
   missingSubjects: [],
   remuneration: "",
@@ -324,6 +326,7 @@ export const tuitionFormSchema = z.object({
     .regex(/^[a-zA-Z\s]+$/, "Name can only contain letters and spaces"),
   guardianPhone: z.string().min(1, "Phone number is required"),
   source: z.string().trim().min(1, "Source is required"),
+  referralUserName: z.string().trim().optional(),
   students: z
     .array(studentFormSchema)
     .min(1, "At least one student is required"),
@@ -438,9 +441,10 @@ export function yearOptions(count = 5): { key: string; label: string }[] {
 
 /** Quick-pick suggestion chips for the tuition "Additional Notes" textarea */
 export const tuitionNotesSuggestions = [
+  "School Teacher Recommended",
   "Only Female Teacher Required",
   "Only Male Teacher Required",
-  "English Communication Required",
+  "Only English Communication Required",
   "Aged & Experienced teacher required",
   "English and Hindi communication required",
 ] as const;

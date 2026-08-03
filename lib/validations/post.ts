@@ -38,6 +38,7 @@ export const createPostSchema = z.object({
     .min(1, "Guardian phone is required"),
 
   source: z.string().trim().min(1, "Source is required"),
+  referralUserName: z.string().trim().optional(),
 
   paymentstatus: z.enum(["done", "pending"]).optional(),
   paymentDate: z.string().optional(),

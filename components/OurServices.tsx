@@ -31,7 +31,7 @@ export default function OurServices() {
             Whether you are looking to learn, teach, hire, or work, AOTF makes
             the connection simple, secure, and scalable.
           </p>
-          <Redirect to="/services">
+          {/* <Redirect to="/services">
             <Button className="flex items-center w-max gap-2 mt-8 hover:-translate-y-0.5 transition bg-linear-to-r from-indigo-600 to-[#8A7DFF] py-3 px-8 rounded-full text-white">
               <span>Read more</span>
               <svg
@@ -47,7 +47,7 @@ export default function OurServices() {
                 />
               </svg>
             </Button>
-          </Redirect>
+          </Redirect> */}
         </div>
       </section>
     </>

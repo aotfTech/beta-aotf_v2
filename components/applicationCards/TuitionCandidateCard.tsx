@@ -6,7 +6,13 @@ import { Chip } from "@heroui/chip";
 import { Button } from "@heroui/button";
 import { Checkbox } from "@heroui/checkbox";
 import { User } from "@heroui/user";
-import { Phone, Eye } from "lucide-react";
+import {
+  Eye,
+  GraduationCap,
+  BookOpen,
+  BriefcaseBusiness,
+  MapPin,
+} from "lucide-react";
 import { formatPhone } from "@/lib/utils/phone";
 import { useRouter } from "next/navigation";
 export interface Candidate {
@@ -26,6 +32,10 @@ export interface Candidate {
     | "withdrawn";
   appliedDate: string;
   coverLetter?: string;
+  board?: string | null;
+  qualification?: string | null;
+  teachingExp?: string | null;
+  address?: string | null;
 }
 
 interface CandidateCardProps {
@@ -44,7 +54,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   onSelectionChange,
 }) => {
   const getStatusColor = (
-    status: string
+    status: string,
   ): "default" | "primary" | "secondary" | "success" | "warning" | "danger" => {
     switch (status) {
       case "applied":
@@ -86,19 +96,14 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
     }
   };
 
-  const applicantTypeLabel =
-    candidate.applicantType === "teacher" ? "Teacher" : "Candidate";
   const router = useRouter();
-  console.log(
-    "Rendering CandidateCard details:", candidate
-  );
 
   return (
     <Card
       className={`w-full hover:shadow-md transition-shadow ${isSelected ? "ring-2 ring-danger" : ""}`}
     >
-      <CardBody className="p-4 pb-2">
-        <div className="space-y-3">
+      <CardBody className="p-2 pb-0">
+        <div className="space-y-2">
           {/* Avatar */}
           <div className="flex justify-between gap-3 w-full">
             <div className="flex items-center gap-2">
@@ -120,7 +125,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
                   src: candidate.avatar,
                 }}
                 name={`${candidate.name}`}
-                description={`${candidate.email}`}
+                description={`${candidate.phone}`}
               />
             </div>
             <Chip
@@ -133,16 +138,47 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
           </div>
 
           {/* Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 text-sm text-default-600">
-              <Phone size={14} />
-              <span>{formatPhone(candidate.phone)}</span>
+          <div className="flex flex-col min-w-0 text-sm gap-1">
+            <div className="w-full flex items-center gap-5">
+              <div className="flex items-center gap-1.5">
+                <BookOpen size={13} className="text-default-400 shrink-0" />
+                <span className="font-medium text-default-700 truncate">
+                  {candidate.board?.trim() || "N/A"}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <GraduationCap
+                  size={13}
+                  className="text-default-400 shrink-0"
+                />
+                <span className="font-medium text-default-700 truncate">
+                  {candidate.qualification?.trim() || "N/A"}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <BriefcaseBusiness
+                  size={13}
+                  className="text-default-400 shrink-0"
+                />
+                <span className="font-medium text-default-700 truncate">
+                  {candidate.teachingExp?.trim() || "N/A"}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 sm:col-span-2">
+              <MapPin size={13} className="text-default-400 shrink-0" />
+              <span className="font-medium text-default-700 truncate">
+                {candidate.address?.trim() || "N/A"}
+              </span>
             </div>
           </div>
         </div>
       </CardBody>
-      <CardFooter className="flex items-center justify-between gap-2 pt-2">
-        <p className="text-md font-semibold text-default-400">
+      <CardFooter className="flex items-center justify-between gap-2 pt-1 p-2">
+        <p className="text-xs font-semibold text-default-400">
           Applied: {new Date(candidate.appliedDate).toLocaleDateString()}
         </p>
         <Button

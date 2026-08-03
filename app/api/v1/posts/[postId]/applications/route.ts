@@ -19,6 +19,7 @@ import { createRateLimiter } from "@/lib/rate-limit";
 import { ValidationError } from "@/lib/errors";
 import dbConnect from "@/lib/db";
 import Profile from "@/lib/models/Profile";
+import OnboardingDetails from "@/lib/models/OnboardingDetails";
 import {
   postIdParamSchema,
   deleteApplicationsBodySchema,
@@ -131,6 +132,16 @@ export async function POST(
       displayName?: string | null;
       phone?: string | null;
       whatsapp?: string | null;
+      board?: string | null;
+      qualification?: string | null;
+      teachingExp?: string | null;
+      address?: string | null;
+    }>();
+    const onboarding = await OnboardingDetails.findOne({ clerkId }).lean<{
+      board?: string | null;
+      qualification?: string | null;
+      teachingExp?: string | null;
+      address?: string | null;
     }>();
 
     if (!profile) {
@@ -173,6 +184,10 @@ export async function POST(
       email: primaryEmail,
       phone,
       avatarUrl: clerkUser.imageUrl || null,
+      board: profile.board ?? onboarding?.board ?? null,
+      qualification: profile.qualification?.trim() || onboarding?.qualification || null,
+      teachingExp: profile.teachingExp ?? onboarding?.teachingExp ?? null,
+      address: profile.address?.trim() || onboarding?.address || null,
     };
 
     const application = await createPostApplication({

@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import LeadershipCard from "@/components/home/LeadershipCard";
 import { Card } from "@heroui/card";
 import AdPlacementSlot from "@/components/AdPlacementSlot";
+import CitySelector from "@/components/CitySelector";
 
 export default function Home() {
   return (
@@ -52,6 +53,11 @@ export default function Home() {
           <Counter label="Freelancers" start={842} />
           <Counter label="Success Rate" start={89} suffix="%" float />
         </div>
+        <OurServices />
+        <AdPlacementSlot placement="home_banner" />
+        <ReknownedSection />
+        <TimelineDemo />
+        <CitySelector />
         <Card
           isBlurred
           className="grid grid-cols-1 gap-3 p-2 border-none bg-background/60 dark:bg-default-100/50 max-w-152.5 mt-10"
@@ -70,10 +76,6 @@ export default function Home() {
             quote="Execution is key to success."
           />
         </Card>
-        <OurServices />
-        <AdPlacementSlot placement="home_banner" />
-        <ReknownedSection />
-        <TimelineDemo />
         <Testimonials />
         {/* <Stats /> */}
         {/* <ScrollBanner /> */}

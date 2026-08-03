@@ -124,7 +124,7 @@ export default function ViewPostPage({
     window.open(
       `https://wa.me/${phoneTargets.whatsapp}`,
       "_blank",
-      "noopener,noreferrer"
+      "noopener,noreferrer",
     );
   };
 
@@ -142,7 +142,7 @@ export default function ViewPostPage({
         if (!postRes.ok) {
           const data = await postRes.json().catch(() => ({}));
           throw new Error(
-            data.error || `Failed to fetch post (${postRes.status})`
+            data.error || `Failed to fetch post (${postRes.status})`,
           );
         }
         const { post } = await postRes.json();
@@ -161,14 +161,18 @@ export default function ViewPostPage({
               status: app.status,
               appliedDate: app.appliedAt ?? app.createdAt,
               coverLetter: app.coverLetter,
-            })
+              board: app.applicantSnapshot?.board ?? null,
+              qualification: app.applicantSnapshot?.qualification ?? null,
+              teachingExp: app.applicantSnapshot?.teachingExp ?? null,
+              address: app.applicantSnapshot?.address ?? null,
+            }),
           );
           setCandidates(mapped);
         }
       } catch (err) {
-      reportClientError(err, { feature: "admin-tuition-detail" });
+        reportClientError(err, { feature: "admin-tuition-detail" });
         setFetchError(
-          err instanceof Error ? err.message : "Failed to fetch post"
+          err instanceof Error ? err.message : "Failed to fetch post",
         );
       } finally {
         setIsLoading(false);
@@ -274,7 +278,7 @@ export default function ViewPostPage({
     const inGC = candidates.filter((c) => c.status === "GC");
     const applied = candidates.filter((c) => c.status === "applied");
     const declined = candidates.filter(
-      (c) => c.status === "decline" || c.status === "auto_declined"
+      (c) => c.status === "decline" || c.status === "auto_declined",
     );
     const withdrawn = candidates.filter((c) => c.status === "withdrawn");
 
@@ -421,7 +425,7 @@ export default function ViewPostPage({
                       {postData.students
                         .map(
                           (s) =>
-                            `${s.subjects.map((sub) => sub.toUpperCase()).join(", ")} | Class - ${s.className} (${s.board.toUpperCase()})`
+                            `${s.subjects.map((sub) => sub.toUpperCase()).join(", ")} | Class - ${s.className} (${s.board.toUpperCase()})`,
                         )
                         .join(" | ")}
                     </h1>
@@ -646,7 +650,7 @@ export default function ViewPostPage({
             {/* Waiting List / Declined List */}
             {categorizedCandidates.waitingListCandidates.length > 0 && (
               <div>
-                <Accordion variant="bordered">
+                <Accordion className="underlined">
                   <AccordionItem
                     key="1"
                     aria-label={categorizedCandidates.waitingListLabel}
@@ -674,7 +678,7 @@ export default function ViewPostPage({
                       </div>
                     }
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       {categorizedCandidates.waitingListCandidates.map(
                         (candidate) => (
                           <CandidateCard
@@ -685,7 +689,7 @@ export default function ViewPostPage({
                             isSelected={selectedIds.has(candidate.id)}
                             onSelectionChange={handleSelectionChange}
                           />
-                        )
+                        ),
                       )}
                     </div>
                   </AccordionItem>

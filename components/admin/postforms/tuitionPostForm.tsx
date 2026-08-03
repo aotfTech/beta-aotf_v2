@@ -387,6 +387,7 @@ export default function TuitionPostForm({
           guardianName: post.guardianName || "",
           guardianPhone: post.guardianPhone || "",
           source: post.source || tuitionFormDefaults.source,
+          referralUserName: post.referralUserName || "",
           students: post.students?.length
             ? post.students.map((s: any) => ({
                 class: s.className || "",
@@ -432,6 +433,9 @@ export default function TuitionPostForm({
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+    if (field === "source" && value !== "referral" && errors.referralUserName) {
+      setErrors((prev) => ({ ...prev, referralUserName: "" }));
     }
   };
   const handleGuardianPhoneChange = (value: string) =>
@@ -501,6 +505,10 @@ export default function TuitionPostForm({
   const validate = () => {
     try {
       tuitionFormSchema.parse(formData);
+      if (formData.source === "referral" && !formData.referralUserName.trim()) {
+        setErrors({ referralUserName: "Referral user name is required" });
+        return false;
+      }
       setErrors({});
       return true;
     } catch (error) {
@@ -529,12 +537,19 @@ export default function TuitionPostForm({
             guardianName: tuitionFormSchema.shape.guardianName,
             guardianPhone: tuitionFormSchema.shape.guardianPhone,
             source: tuitionFormSchema.shape.source,
+            referralUserName: tuitionFormSchema.shape.referralUserName,
           });
           step1Schema.parse({
             guardianName: formData.guardianName,
             guardianPhone: formData.guardianPhone,
             source: formData.source,
+            referralUserName: formData.referralUserName,
           });
+          if (formData.source === "referral" && !formData.referralUserName.trim()) {
+            newErrors.referralUserName = "Referral user name is required";
+            setErrors(newErrors);
+            return false;
+          }
           break;
 
         case 2: // Student Details
@@ -611,11 +626,16 @@ export default function TuitionPostForm({
             guardianName: tuitionFormSchema.shape.guardianName,
             guardianPhone: tuitionFormSchema.shape.guardianPhone,
             source: tuitionFormSchema.shape.source,
+            referralUserName: tuitionFormSchema.shape.referralUserName,
           }).parse({
             guardianName: formData.guardianName,
             guardianPhone: formData.guardianPhone,
             source: formData.source,
+            referralUserName: formData.referralUserName,
           });
+          if (formData.source === "referral" && !formData.referralUserName.trim()) {
+            return false;
+          }
           break;
         case 2:
           z.object({ students: tuitionFormSchema.shape.students }).parse({
@@ -664,6 +684,9 @@ export default function TuitionPostForm({
         guardianName: formData.guardianName.trim(),
         guardianPhone: formData.guardianPhone.trim(),
         source: formData.source,
+        ...(formData.source === "referral" && formData.referralUserName.trim()
+          ? { referralUserName: formData.referralUserName.trim() }
+          : {}),
         students: mappedStudents,
         classType: classTypeToApi[formData.classType] || "offline",
         frequencyPerWeek: parseInt(formData.frequency || "3", 10),
@@ -901,6 +924,21 @@ export default function TuitionPostForm({
                       <SelectItem key={source.key}>{source.label}</SelectItem>
                     ))}
                   </Select>
+                  {formData.source === "referral" && (
+                    <Input
+                      label="Referral User Name"
+                      placeholder="Enter referral user name"
+                      value={formData.referralUserName}
+                      onChange={(e) =>
+                        handleChange("referralUserName", e.target.value)
+                      }
+                      isRequired
+                      isInvalid={!!errors.referralUserName}
+                      errorMessage={errors.referralUserName}
+                      variant="bordered"
+                      className="md:col-span-2"
+                    />
+                  )}
                 </div>
               </div>
             </Step>
