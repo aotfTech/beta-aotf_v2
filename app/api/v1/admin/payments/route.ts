@@ -106,13 +106,13 @@ export async function GET(_request: NextRequest) {
     const tuitionPostIds = tuitionPosts.map((post) => post.postId).filter(Boolean);
     const invoicePostIdSet = new Set(tuitionPostIds);
     const invoices = tuitionPostIds.length
-      ? await Invoice.find({ isLatest: true }, { postId: 1, invoiceId: 1, isLatest: 1 }).lean()
+      ? await Invoice.find({ isLatest: true }, { postId: 1, invoiceId: 1, paymentStatus: 1, paymentDate: 1, isLatest: 1 }).lean()
       : [];
 
     const invoiceByPostId = new Map(
       invoices
         .filter((invoice) => invoice.postId && invoice.invoiceId && invoicePostIdSet.has(invoice.postId))
-        .map((invoice) => [invoice.postId as string, invoice.invoiceId as string]),
+        .map((invoice) => [invoice.postId as string, invoice]),
     );
 
     return NextResponse.json({
@@ -124,23 +124,28 @@ export async function GET(_request: NextRequest) {
         email: admin.email,
         isActive: admin.isActive,
       })),
-      tuitionPosts: tuitionPosts.map((post) => ({
-        postId: post.postId,
-        guardianName: post.guardianName,
-        guardianPhone: post.guardianPhone,
-        source: post.source,
-        monthlyBudget: post.monthlyBudget,
-        paymentstatus: post.paymentstatus,
-        paymentDate: post.paymentDate,
-        tentativeDate: post.tentativeDate,
-        createdAt: post.createdAt,
-        updatedAt: post.updatedAt,
-        createdByAdminClerkId: post.createdByAdminClerkId,
-        updatedByAdminClerkId: post.updatedByAdminClerkId,
-        status: post.status,
-        invoiceGenerated: Boolean(post.invoiceGenerated),
-        invoiceId: invoiceByPostId.get(post.postId),
-      })),
+      tuitionPosts: tuitionPosts.map((post) => {
+        const invoice = invoiceByPostId.get(post.postId);
+        return {
+          postId: post.postId,
+          guardianName: post.guardianName,
+          guardianPhone: post.guardianPhone,
+          source: post.source,
+          monthlyBudget: post.monthlyBudget,
+          paymentstatus: post.paymentstatus,
+          paymentDate: post.paymentDate,
+          tentativeDate: post.tentativeDate,
+          createdAt: post.createdAt,
+          updatedAt: post.updatedAt,
+          createdByAdminClerkId: post.createdByAdminClerkId,
+          updatedByAdminClerkId: post.updatedByAdminClerkId,
+          status: post.status,
+          invoiceGenerated: Boolean(post.invoiceGenerated),
+          invoiceId: invoice?.invoiceId,
+          invoicePaymentStatus: invoice?.paymentStatus,
+          invoicePaymentDate: invoice?.paymentDate,
+        };
+      }),
       jobs: jobs.map((job) => ({
         jobId: job.jobId,
         title: job.title,

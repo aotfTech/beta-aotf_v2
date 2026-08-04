@@ -54,6 +54,8 @@ type TuitionPostRow = {
   status?: string;
   invoiceGenerated?: boolean;
   invoiceId?: string;
+  invoicePaymentStatus?: string;
+  invoicePaymentDate?: string;
 };
 
 type JobRow = {
@@ -265,6 +267,20 @@ export default function PaymentDashboard() {
       const tuition = filteredTuitionPosts.filter(
         (post) => post.createdByAdminClerkId === admin.clerkId,
       );
+
+      const tuitionPaid = data.tuitionPosts.filter((post) => {
+        if (post.createdByAdminClerkId !== admin.clerkId) return false;
+        const isPaid = post.paymentstatus === "done" || post.invoicePaymentStatus === "paid" || post.invoicePaymentStatus === "partial";
+        if (!isPaid) return false;
+        const paidDate = parseDate(post.paymentDate) || parseDate(post.invoicePaymentDate);
+        if (!paidDate) return false;
+        if (selectedYear && paidDate.getFullYear() !== Number(selectedYear))
+          return false;
+        if (selectedMonth && String(paidDate.getMonth() + 1) !== selectedMonth)
+          return false;
+        return true;
+      });
+
       const jobs = filteredJobs.filter(
         (job) =>
           job.createdByAdminId &&
@@ -278,10 +294,11 @@ export default function PaymentDashboard() {
         role: admin.role,
         isActive: admin.isActive,
         tuitionCount: tuition.length,
+        tuitionPaidCount: tuitionPaid.length,
         jobCount: jobs.length,
       };
     });
-  }, [data.admins, filteredJobs, filteredTuitionPosts]);
+  }, [data.admins, data.tuitionPosts, filteredJobs, filteredTuitionPosts, selectedYear, selectedMonth]);
 
   useEffect(() => {
     if (!selectedAdminKey && data.admins.length) {
@@ -310,10 +327,11 @@ export default function PaymentDashboard() {
       const total = adminStats.reduce(
         (acc, a) => {
           acc.tuitionCount += a.tuitionCount;
+          acc.tuitionPaidCount += a.tuitionPaidCount;
           acc.jobCount += a.jobCount;
           return acc;
         },
-        { tuitionCount: 0, jobCount: 0 },
+        { tuitionCount: 0, tuitionPaidCount: 0, jobCount: 0 },
       );
       return {
         clerkId: "all",
@@ -460,11 +478,17 @@ export default function PaymentDashboard() {
         </CardHeader>
 
         <CardBody className="space-y-3 px-2.5 pt-0 sm:px-4 sm:pb-4">
-          <div className="grid grid-cols-3 gap-1.5 text-[10px] sm:gap-2 sm:text-sm">
+          <div className="grid grid-cols-4 gap-1.5 text-[10px] sm:gap-2 sm:text-sm">
             <div className="rounded-2xl bg-slate-50 p-2 text-center sm:p-3">
-              <p className="uppercase tracking-wide text-slate-500">Tuition</p>
+              <p className="uppercase tracking-wide text-slate-500">Created</p>
               <p className="text-sm font-semibold text-slate-950 sm:text-base">
                 {selectedAdminStats?.tuitionCount ?? 0}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-emerald-50 p-2 text-center sm:p-3">
+              <p className="uppercase tracking-wide text-emerald-700">Paid</p>
+              <p className="text-sm font-semibold text-emerald-900 sm:text-base">
+                {selectedAdminStats?.tuitionPaidCount ?? 0}
               </p>
             </div>
             <div className="rounded-2xl bg-slate-50 p-2 text-center sm:p-3">
@@ -473,11 +497,11 @@ export default function PaymentDashboard() {
                 {selectedAdminStats?.jobCount ?? 0}
               </p>
             </div>
-            <div className="rounded-2xl bg-emerald-50 p-2 text-center sm:p-3">
-              <p className="uppercase tracking-wide text-emerald-700">
+            <div className="rounded-2xl bg-indigo-50 p-2 text-center sm:p-3">
+              <p className="uppercase tracking-wide text-indigo-700">
                 Combined
               </p>
-              <p className="text-sm font-semibold text-emerald-900 sm:text-base">
+              <p className="text-sm font-semibold text-indigo-900 sm:text-base">
                 {(selectedAdminStats?.tuitionCount ?? 0) +
                   (selectedAdminStats?.jobCount ?? 0)}
               </p>
@@ -762,10 +786,10 @@ export default function PaymentDashboard() {
             createdAt: post.createdAt,
             tuitionFee: post.monthlyBudget,
             statusLabel: "Payment status",
-            statusValue: post.paymentstatus === "done" ? "Paid" : "Pending",
+            statusValue: (post.paymentstatus === "done" || post.invoicePaymentStatus === "paid" || post.invoicePaymentStatus === "partial") ? "Paid" : "Pending",
             invoiceId: post.invoiceId,
             invoiceGenerated: post.invoiceGenerated,
-            isPaid: post.paymentstatus === "done",
+            isPaid: post.paymentstatus === "done" || post.invoicePaymentStatus === "paid" || post.invoicePaymentStatus === "partial",
           })),
           ...filteredJobs.map((job) => ({
             kind: "job" as const,
@@ -983,9 +1007,17 @@ export default function PaymentDashboard() {
               </div>
               <p className="text-xl font-black text-emerald-900">
                 {
-                  filteredTuitionPosts.filter(
-                    (post) => post.paymentstatus === "done",
-                  ).length
+                  data.tuitionPosts.filter((post) => {
+                    const isPaid = post.paymentstatus === "done" || post.invoicePaymentStatus === "paid" || post.invoicePaymentStatus === "partial";
+                    if (!isPaid) return false;
+                    const paidDate = parseDate(post.paymentDate) || parseDate(post.invoicePaymentDate);
+                    if (!paidDate) return false;
+                    if (selectedYear && paidDate.getFullYear() !== Number(selectedYear))
+                      return false;
+                    if (selectedMonth && String(paidDate.getMonth() + 1) !== selectedMonth)
+                      return false;
+                    return true;
+                  }).length
                 }
               </p>
             </CardBody>
