@@ -14,7 +14,6 @@ import {
   MapPin,
   RefreshCw,
   Clock,
-  User,
   Info,
   Search,
   FileText,
@@ -100,6 +99,41 @@ function getAdminDisplayName(log: ActivityLog) {
   return { name: log.adminName ?? "Unknown Admin", username: log.adminUsername ?? null };
 }
 
+type AdminOption = {
+  _id: string;
+  name: string;
+  username?: string;
+  email: string;
+  role: string;
+};
+
+function toAdminOption(admin: any): AdminOption {
+  const fallbackName = [admin?.firstName, admin?.lastName].filter(Boolean).join(" ");
+  const id = admin?._id ?? admin?.id ?? admin?.clerkId ?? admin?.email ?? fallbackName ?? "unknown";
+
+  return {
+    _id: String(id),
+    name: admin?.name ?? fallbackName ?? admin?.username ?? "Unknown Admin",
+    username: admin?.username,
+    email: admin?.email ?? "",
+    role: admin?.role ?? "",
+  };
+}
+
+function mergeAdminOptions(existing: AdminOption[], incoming: any[]): AdminOption[] {
+  const merged = new Map<string, AdminOption>();
+
+  existing.forEach((admin) => {
+    if (admin._id) merged.set(admin._id, admin);
+  });
+
+  incoming.map(toAdminOption).forEach((admin) => {
+    if (admin._id && !merged.has(admin._id)) merged.set(admin._id, admin);
+  });
+
+  return Array.from(merged.values());
+}
+
 function buildNarrative(log: ActivityLog): React.ReactNode {
   const { name, username } = getAdminDisplayName(log);
   const actionInfo = ACTION_LABELS[log.action];
@@ -117,6 +151,7 @@ function buildNarrative(log: ActivityLog): React.ReactNode {
       {log.adminRole}
     </Chip>
   );
+  <br />
 
   const meta = log.metadata ?? {};
 
@@ -350,20 +385,51 @@ const PAGE_SIZE = 10;
 
 export default function SuperadminActivityLogs() {
   const [logs, setLogs] = useState<ActivityLog[]>([]);
+  const [admins, setAdmins] = useState<AdminOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [searchAdmin, setSearchAdmin] = useState("");
+  const [selectedAdminId, setSelectedAdminId] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [selectedLog, setSelectedLog] = useState<ActivityLog | null>(null);
 
-  const fetchLogs = useCallback(async (p: number) => {
+  const fetchAdmins = useCallback(async () => {
+    try {
+      const res = await fetch("/api/v1/admin/admins");
+      if (!res.ok) throw new Error("Failed to load admin list.");
+
+      const data = await res.json();
+      const rawAdmins = Array.isArray(data?.admins)
+        ? data.admins
+        : Array.isArray(data?.users)
+          ? data.users
+          : [];
+
+      setAdmins((prev) => mergeAdminOptions(prev, rawAdmins));
+    } catch (err) {
+      console.error("Failed to load admin list", err);
+    }
+  }, []);
+
+  const fetchLogs = useCallback(async (p: number, adminId?: string, query?: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/activity-logs?page=${p}&limit=${PAGE_SIZE}`);
+      const params = new URLSearchParams({
+        page: String(p),
+        limit: String(PAGE_SIZE),
+      });
+
+      const trimmedAdminId = adminId?.trim();
+      const trimmedQuery = query?.trim();
+
+      if (trimmedAdminId) params.set("adminId", trimmedAdminId);
+      if (trimmedQuery) params.set("search", trimmedQuery);
+
+      const res = await fetch(`/api/admin/activity-logs?${params.toString()}`);
       if (res.status === 403 || res.status === 401) {
         throw new Error("Unauthorized. Only Superadmins can view activity logs.");
       }
@@ -371,6 +437,16 @@ export default function SuperadminActivityLogs() {
       const data = await res.json();
       setLogs(data.logs);
       setTotalPages(data.pagination.totalPages);
+
+      const logAdmins = (data.logs ?? []).map((log: ActivityLog) => ({
+        _id: log.adminId?._id ?? log.adminId ?? log._id,
+        name: log.adminId?.name ?? log.adminName ?? "Unknown Admin",
+        username: log.adminId?.username ?? log.adminUsername,
+        email: log.adminId?.email ?? "",
+        role: log.adminId?.role ?? log.adminRole,
+      }));
+
+      setAdmins((prev) => mergeAdminOptions(prev, logAdmins));
     } catch (err) {
       reportClientError(err, { feature: "admin-activity" });
       setError(err instanceof Error ? err.message : "An error occurred");
@@ -379,18 +455,30 @@ export default function SuperadminActivityLogs() {
     }
   }, []);
 
-  useEffect(() => { void fetchLogs(page); }, [page, fetchLogs]);
+  useEffect(() => {
+    void fetchAdmins();
+    void fetchLogs(1);
+  }, [fetchAdmins, fetchLogs]);
 
   const viewDetails = (log: ActivityLog) => { setSelectedLog(log); onOpen(); };
 
-  const filteredLogs = searchAdmin.trim()
-    ? logs.filter((l) => {
-        const name = (l.adminId?.name ?? l.adminName ?? "").toLowerCase();
-        const uname = (l.adminId?.username ?? l.adminUsername ?? "").toLowerCase();
-        const q = searchAdmin.toLowerCase();
-        return name.includes(q) || uname.includes(q);
-      })
-    : logs;
+  const handleApplyFilters = () => {
+    setPage(1);
+    void fetchLogs(1, selectedAdminId, searchTerm);
+  };
+
+  const handlePageChange = (nextPage: number) => {
+    setPage(nextPage);
+    void fetchLogs(nextPage, selectedAdminId, searchTerm);
+  };
+
+  const handleAdminChange = (value: string) => {
+    setSelectedAdminId(value);
+    setPage(1);
+    void fetchLogs(1, value, searchTerm);
+  };
+
+  const filteredLogs = logs;
 
   return (
     <div className="w-full space-y-5 px-4">
@@ -405,24 +493,41 @@ export default function SuperadminActivityLogs() {
             Real-time narrative log of all admin actions, with device and location details.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={selectedAdminId}
+            onChange={(e) => handleAdminChange(e.target.value)}
+            className="h-9 min-w-[12rem] rounded-lg border border-default-200 bg-background px-3 text-sm text-foreground"
+          >
+            <option value="">All admins</option>
+            {admins.map((admin) => (
+              <option key={admin._id} value={admin._id}>
+                {admin.name} ({admin.email})
+              </option>
+            ))}
+          </select>
           <Input
-            placeholder="Filter by admin name..."
+            placeholder="Search admin / post ID / job ID"
             size="sm"
             startContent={<Search size={14} className="text-default-400" />}
-            value={searchAdmin}
-            onChange={(e) => setSearchAdmin(e.target.value)}
-            className="w-48"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleApplyFilters();
+              }
+            }}
+            className="w-64"
           />
           <Button
             variant="flat"
             color="primary"
             size="sm"
             startContent={<RefreshCw size={14} />}
-            isLoading={isLoading}
-            onPress={() => void fetchLogs(page)}
+            onPress={handleApplyFilters}
           >
-            Refresh
+            Apply
           </Button>
         </div>
       </div>
@@ -445,7 +550,7 @@ export default function SuperadminActivityLogs() {
                   <CardBody className="p-3">
                     <div className="flex items-start gap-3">
                       {/* Action icon */}
-                      <div className={`mt-0.5 rounded-lg p-1.5 flex-shrink-0 ${
+                      <div className={`mt-0.5 rounded-lg p-1.5 shrink-0 ${
                         actionInfo?.color === "success" ? "bg-success-100 text-success-700" :
                         actionInfo?.color === "danger"  ? "bg-danger-100 text-danger-700" :
                         actionInfo?.color === "warning" ? "bg-warning-100 text-warning-700" :
@@ -495,7 +600,7 @@ export default function SuperadminActivityLogs() {
                         variant="light"
                         color="default"
                         onPress={() => viewDetails(log)}
-                        className="flex-shrink-0"
+                        className="shrink-0"
                       >
                         <Info size={16} />
                       </Button>
@@ -515,7 +620,7 @@ export default function SuperadminActivityLogs() {
                 color="primary"
                 page={page}
                 total={totalPages}
-                onChange={setPage}
+                onChange={handlePageChange}
               />
             </div>
           )}

@@ -256,10 +256,9 @@ function InvoiceCard({
         )}
 
         {/* Actions */}
-        <div className="flex items-center justify-between px-4 py-2 border-t border-default-100">
+        <div className="flex items-center justify-between px-4 py-4  border-t border-default-100">
           <Button
             size="sm"
-            variant="shadow"
             color="danger"
             isIconOnly
             onPress={() => onDelete(invoice.invoiceId)}
@@ -269,7 +268,6 @@ function InvoiceCard({
           </Button>
           <Button
             size="sm"
-            variant="shadow"
             color="primary"
             startContent={<PencilLine size={14} />}
             onPress={() => onStatusUpdate(invoice)}
@@ -279,7 +277,6 @@ function InvoiceCard({
           <div className="flex items-center gap-1">
             <Button
               size="sm"
-              variant="shadow"
               color="success"
               isIconOnly
               onPress={() => onShare(invoice.invoiceId)}
@@ -289,7 +286,6 @@ function InvoiceCard({
             </Button>
             <Button
               size="sm"
-              variant="shadow"
               isIconOnly
               onPress={() => setExpanded(!expanded)}
               title={expanded ? "Collapse" : "Expand"}
@@ -694,7 +690,7 @@ export default function InvoicesPage() {
 
   return (
     <div className="container mx-auto px-4 w-full max-w-5xl">
-      <div className="space-y-4">
+      <div className="space-y-2">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -809,7 +805,7 @@ export default function InvoicesPage() {
             </CardBody>
           </Card>
         ) : (
-          <div className="space-y-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2 grid grid-cols-1 md:grid-cols-2 gap-0">
             {invoices.map((inv) => (
               <InvoiceCard
                 key={inv._id}

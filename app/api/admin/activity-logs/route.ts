@@ -48,6 +48,7 @@ export async function GET(req: Request) {
   const module = searchParams.get("module");
   const action = searchParams.get("action");
   const adminId = searchParams.get("adminId");
+  const search = searchParams.get("search")?.trim();
   const page = Math.max(parseInt(searchParams.get("page") || "1", 10), 1);
   const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "10", 10), 1), 100);
   const skip = (page - 1) * limit;
@@ -63,6 +64,21 @@ export async function GET(req: Request) {
     query.createdAt = {};
     if (dateFrom) query.createdAt.$gte = new Date(dateFrom);
     if (dateTo) query.createdAt.$lte = new Date(dateTo);
+  }
+  if (search) {
+    const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const searchRegex = new RegExp(escapedSearch, "i");
+    query.$or = [
+      { adminName: searchRegex },
+      { adminUsername: searchRegex },
+      { targetRefId: searchRegex },
+      { "metadata.postId": searchRegex },
+      { "metadata.jobId": searchRegex },
+      { "metadata.enquiryId": searchRegex },
+      { "metadata.invoiceId": searchRegex },
+      { "metadata.action": searchRegex },
+      { "metadata.notes": searchRegex },
+    ];
   }
 
   try {
