@@ -5,6 +5,7 @@ import { format } from "date-fns";
 
 type Item = {
   name: string;
+  description?: string;
   qty: number;
   rate: number;
   price: number;
@@ -25,6 +26,7 @@ interface Props {
   roundOff: number;
   total: number;
   postId: string;
+  postLabel?: string;
   enquiryId?: string;
   invoiceId: string;
   tutorId: string;
@@ -47,6 +49,7 @@ export function EBill({
   roundOff,
   total,
   postId,
+  postLabel = "Post ID",
   enquiryId,
   invoiceId,
   tutorName,
@@ -74,7 +77,8 @@ export function EBill({
         <Info label="Date" value={format(date, "dd/MM/yy HH:mm")} />
 
         {/* ✅ NEW FIELDS */}
-        <Info label="Post ID" value={postId} />
+        <Info label={postLabel} value={postId} />
+
         <Info label="Enquiry ID" value={enquiryId || "-"} />
         <Info label="Tutor" value={`${tutorName}`} />
         <Info label="Tutor Phone" value={tutorPhone} />
@@ -112,8 +116,13 @@ export function EBill({
             <tbody>
               {items.map((item, i) => (
                 <tr key={i} className="border-b">
-                  <td className="py-3">{item.name}</td>
-                  <td className="text-right font-semibold">₹{item.price}</td>
+                  <td className="py-3">
+                    <p>{item.name}</p>
+                    {item.description && (
+                      <p className="text-[10px] text-slate-400 mt-0.5">{item.description}</p>
+                    )}
+                  </td>
+                  <td className="text-right font-semibold align-top pt-3">₹{item.price}</td>
                 </tr>
               ))}
             </tbody>

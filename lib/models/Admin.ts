@@ -70,6 +70,7 @@ const adminSchema = new Schema(
     },
     permissions: { type: permissionsSchema, default: () => ({}) },
     isActive: { type: Boolean, default: true },
+    payoutPercentage: { type: Number, default: 0, min: 0, max: 100 },
     isLocked: { type: Boolean, default: false },
     lockedAt: { type: Date, default: null },
     failedLoginAttempts: { type: Number, default: 0 },

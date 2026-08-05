@@ -21,9 +21,18 @@ export default async function InvoicePage({ params }: Props) {
   // Map Mongoose document to EBill Props format
   const totalQty = invoiceDoc.breakdown.items.reduce((sum: number, item: any) => sum + item.quantity, 0);
 
+  const isPayoutInvoice = invoiceDoc.invoiceId.startsWith("INV-PAYOUT-");
+
+  // For payout invoices: show count. For regular invoices: show the postId.
+  const postIdValue = isPayoutInvoice
+    ? String(invoiceDoc.breakdown.items.length)
+    : invoiceDoc.postId || "N/A";
+
+  const postIdLabel = isPayoutInvoice ? "Paid Posts" : "Post ID";
+
   const mappedInvoice = {
     orderNumber: invoiceDoc.invoiceId,
-    orderType: invoiceDoc.postId ? "Online Tuition" : "Service",
+    orderType: isPayoutInvoice ? "Remuneration" : invoiceDoc.postId ? "Online Tuition" : "Service",
     amount: invoiceDoc.amount.grandTotal,
     date: invoiceDoc.invoiceDate,
 
@@ -32,6 +41,7 @@ export default async function InvoicePage({ params }: Props) {
 
     items: invoiceDoc.breakdown.items.map((item: any) => ({
       name: item.name,
+      description: item.description,
       qty: item.quantity,
       rate: item.unitAmount,
       price: item.total,
@@ -44,17 +54,19 @@ export default async function InvoicePage({ params }: Props) {
     roundOff: 0,
     total: invoiceDoc.amount.grandTotal,
 
-    postId: invoiceDoc.postId || "N/A",
+    postId: postIdValue,
+
     enquiryId: undefined,
     invoiceId: invoiceDoc.invoiceId,
-    tutorId: "N/A", // Not currently stored directly on the invoice
-    tutorName: invoiceDoc.assignedTeacher?.name || "N/A",
-    tutorPhone: invoiceDoc.assignedTeacher?.phone || "N/A",
+    tutorId: "N/A",
+    tutorName: isPayoutInvoice ? "—" : invoiceDoc.assignedTeacher?.name || "N/A",
+    tutorPhone: isPayoutInvoice ? "—" : invoiceDoc.assignedTeacher?.phone || "N/A",
   };
 
   return (
     <div className="mb-20">
-      <EBill {...mappedInvoice} />
+      <EBill {...mappedInvoice} postLabel={postIdLabel} />
+
     </div>
   );
 }

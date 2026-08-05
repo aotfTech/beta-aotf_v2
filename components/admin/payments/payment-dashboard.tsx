@@ -2,23 +2,30 @@
 
 import { reportClientError } from "@/lib/client-report-error";
 import { formatPhone } from "@/lib/utils/phone";
-import { useEffect, useMemo, useState } from "react";
+import { shareOnWhatsApp } from "@/lib/utils/share";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { addToast } from "@heroui/toast";
 import { Button } from "@heroui/button";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Chip } from "@heroui/chip";
 import { Divider } from "@heroui/divider";
+import { Input } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
 import { Tab, Tabs } from "@heroui/tabs";
 import { Spinner } from "@heroui/spinner";
 import {
   CalendarDays,
+  Copy,
+  ExternalLink,
   Layers3,
+  Percent,
+  ReceiptText,
   RefreshCw,
   ShieldCheck,
   Users,
   BadgeIndianRupee,
+  MessageCircle,
 } from "lucide-react";
 import { months, sourceLists, yearOptions } from "@/lib/validations/forms";
 import { Accordion, AccordionItem } from "@heroui/accordion";
@@ -35,6 +42,7 @@ type AdminRow = {
   role: string;
   email?: string;
   isActive: boolean;
+  payoutPercentage: number;
 };
 
 type TuitionPostRow = {
@@ -121,6 +129,12 @@ export default function PaymentDashboard() {
     {},
   );
 
+  // ── Payout state ────────────────────────────────────────────────────────
+  const [payoutPctDraft, setPayoutPctDraft] = useState<Record<string, string>>({});
+  const [savingPct, setSavingPct] = useState(false);
+  const [generatingPayout, setGeneratingPayout] = useState(false);
+  const [payoutLink, setPayoutLink] = useState<string | null>(null);
+
   useEffect(() => {
     const now = new Date();
     setSelectedYear(String(now.getFullYear()));
@@ -157,6 +171,25 @@ export default function PaymentDashboard() {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Reset payout link when admin/month changes
+  useEffect(() => {
+    setPayoutLink(null);
+  }, [selectedAdminKey, selectedYear, selectedMonth]);
+
+  // Sync draft pct from loaded data
+  useEffect(() => {
+    if (!data.admins.length) return;
+    setPayoutPctDraft((prev) => {
+      const next = { ...prev };
+      data.admins.forEach((a) => {
+        if (!(a.clerkId in next)) {
+          next[a.clerkId] = String(a.payoutPercentage ?? 0);
+        }
+      });
+      return next;
+    });
+  }, [data.admins]);
 
   const selectedKey = `${selectedYear}-${selectedMonth}`;
 
@@ -312,6 +345,29 @@ export default function PaymentDashboard() {
     selectedMonth,
   ]);
 
+  // ── Paid tuition budget total for the selected admin in the period ──────
+  const selectedAdminPaidTotal = useMemo(() => {
+    if (!selectedAdminKey || selectedAdminKey === "all") return 0;
+    return data.tuitionPosts
+      .filter((post) => {
+        if (post.createdByAdminClerkId !== selectedAdminKey) return false;
+        const isPaid =
+          post.paymentstatus === "done" ||
+          post.invoicePaymentStatus === "paid" ||
+          post.invoicePaymentStatus === "partial";
+        if (!isPaid) return false;
+        const paidDate =
+          parseDate(post.paymentDate) || parseDate(post.invoicePaymentDate);
+        if (!paidDate) return false;
+        if (selectedYear && paidDate.getFullYear() !== Number(selectedYear))
+          return false;
+        if (selectedMonth && String(paidDate.getMonth() + 1) !== selectedMonth)
+          return false;
+        return true;
+      })
+      .reduce((sum, p) => sum + (Number(p.monthlyBudget) || 0), 0);
+  }, [data.tuitionPosts, selectedAdminKey, selectedYear, selectedMonth]);
+
   useEffect(() => {
     if (!selectedAdminKey && data.admins.length) {
       setSelectedAdminKey(data.admins[0].clerkId);
@@ -441,6 +497,79 @@ export default function PaymentDashboard() {
     return date.toISOString().slice(0, 10);
   };
 
+  // ── Save payout percentage ───────────────────────────────────────────────
+  const savePayoutPercentage = useCallback(
+    async (adminClerkId: string) => {
+      const pct = Number(payoutPctDraft[adminClerkId]);
+      if (Number.isNaN(pct) || pct < 0 || pct > 100) {
+        addToast({ description: "Percentage must be 0–100", color: "warning" });
+        return;
+      }
+      setSavingPct(true);
+      try {
+        const res = await fetch(
+          "/api/v1/admin/payments/payout-percentage",
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ adminClerkId, percentage: pct }),
+          },
+        );
+        const payload = await res.json();
+        if (!res.ok) throw new Error(payload.error || "Failed to save");
+        addToast({ description: "Payout percentage saved", color: "success" });
+        await fetchData();
+      } catch (err) {
+        reportClientError(err, { feature: "admin-payout-percentage" });
+        addToast({
+          description:
+            err instanceof Error ? err.message : "Failed to save percentage",
+          color: "danger",
+        });
+      } finally {
+        setSavingPct(false);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [payoutPctDraft],
+  );
+
+  // ── Generate payout invoice ──────────────────────────────────────────────
+  const generatePayoutInvoice = useCallback(async () => {
+    if (!selectedAdminKey || selectedAdminKey === "all") return;
+    setGeneratingPayout(true);
+    setPayoutLink(null);
+    try {
+      const res = await fetch(
+        "/api/v1/admin/payments/generate-payout",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            adminClerkId: selectedAdminKey,
+            year: Number(selectedYear),
+            month: Number(selectedMonth),
+          }),
+        },
+      );
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload.error || "Failed to generate payout");
+      const link = `${window.location.origin}/invoices/${payload.invoiceId}`;
+      setPayoutLink(link);
+      addToast({ description: "Payout invoice generated!", color: "success" });
+    } catch (err) {
+      reportClientError(err, { feature: "admin-generate-payout" });
+      addToast({
+        description:
+          err instanceof Error ? err.message : "Failed to generate payout",
+        color: "danger",
+      });
+    } finally {
+      setGeneratingPayout(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAdminKey, selectedYear, selectedMonth]);
+
   // Render helpers
   const renderAdminsTab = () => (
     <div className="space-y-2">
@@ -521,6 +650,146 @@ export default function PaymentDashboard() {
         </CardHeader>
 
         <CardBody className="space-y-3 px-1 pt-0 sm:px-4 sm:pb-4">
+          {/* ── Payout Calculator Section ───────────────────────────── */}
+          {selectedAdminKey && selectedAdminKey !== "all" && (
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-gradient-to-br from-slate-50 to-indigo-50/30 p-3 space-y-3">
+              <div className="flex items-center gap-2">
+                <Percent size={14} className="text-indigo-600" />
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                  Payout Calculator
+                </p>
+              </div>
+
+              {/* Percentage input + save */}
+              <div className="flex items-end gap-2">
+                <Input
+                  label="Payout %"
+                  size="sm"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.5}
+                  variant="bordered"
+                  className="max-w-[140px]"
+                  value={payoutPctDraft[selectedAdminKey] ?? "0"}
+                  onValueChange={(v) =>
+                    setPayoutPctDraft((prev) => ({
+                      ...prev,
+                      [selectedAdminKey]: v,
+                    }))
+                  }
+                  endContent={
+                    <span className="text-xs text-slate-400">%</span>
+                  }
+                />
+                <Button
+                  size="sm"
+                  color="primary"
+                  variant="flat"
+                  isLoading={savingPct}
+                  onPress={() => savePayoutPercentage(selectedAdminKey)}
+                >
+                  Save
+                </Button>
+              </div>
+
+              {/* Live calculation preview */}
+              <div className="rounded-xl bg-white px-3 py-2.5 shadow-sm space-y-1.5">
+                <div className="flex justify-between text-[11px] text-slate-500">
+                  <span>Total paid tuitions ({selectedAdminStats?.tuitionPaidCount ?? 0})</span>
+                  <span className="font-medium text-slate-900">
+                    ₹{selectedAdminPaidTotal.toLocaleString("en-IN")}
+                  </span>
+                </div>
+                <div className="flex justify-between text-[11px] text-slate-500">
+                  <span>Payout rate</span>
+                  <span className="font-medium text-slate-900">
+                    {payoutPctDraft[selectedAdminKey] ?? 0}%
+                  </span>
+                </div>
+                <Divider className="my-1" />
+                <div className="flex justify-between text-sm font-semibold">
+                  <span className="text-slate-700">Estimated payout</span>
+                  <span className="text-indigo-700">
+                    ₹{
+                      (
+                        (selectedAdminPaidTotal *
+                          Number(payoutPctDraft[selectedAdminKey] ?? 0)) /
+                        100
+                      ).toLocaleString("en-IN", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })
+                    }
+                  </span>
+                </div>
+              </div>
+
+              {/* Generate invoice button */}
+              <Button
+                size="sm"
+                color="secondary"
+                variant="solid"
+                startContent={<ReceiptText size={14} />}
+                isLoading={generatingPayout}
+                onPress={generatePayoutInvoice}
+                className="w-full"
+              >
+                Generate Payout Invoice
+              </Button>
+
+              {/* Show link after generation */}
+              {payoutLink && (
+                <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3 space-y-2">
+                  <p className="text-[11px] font-semibold text-indigo-700 uppercase tracking-wide">
+                    Shareable payout link
+                  </p>
+                  <p className="break-all text-[11px] font-mono text-indigo-900">
+                    {payoutLink}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="flat"
+                      color="secondary"
+                      startContent={<Copy size={12} />}
+                      onPress={() => {
+                        navigator.clipboard.writeText(payoutLink);
+                        addToast({ description: "Link copied!", color: "success" });
+                      }}
+                    >
+                      Copy link
+                    </Button>
+                    <Button
+                      as={Link}
+                      href={payoutLink}
+                      target="_blank"
+                      size="sm"
+                      variant="flat"
+                      color="primary"
+                      startContent={<ExternalLink size={12} />}
+                    >
+                      Open
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="solid"
+                      color="success"
+                      className="text-white"
+                      startContent={<MessageCircle size={12} />}
+                      onPress={() => {
+                        const msg = `Here is your payout invoice for ${months[selectedMonth ? parseInt(selectedMonth, 10) - 1 : 0]?.label ?? ""} ${selectedYear}:\n${window.location.origin}${payoutLink}`;
+                        shareOnWhatsApp(msg);
+                      }}
+                    >
+                      Share on WhatsApp
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="grid gap-3 lg:grid-cols-2">
             <Accordion>
               <AccordionItem key="1" aria-label="Tuitions" title="Tuitions">

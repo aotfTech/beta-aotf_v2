@@ -66,7 +66,7 @@ export async function GET(_request: NextRequest) {
     }
 
     const [admins, tuitionPosts, jobs] = await Promise.all([
-      Admin.find({}, { clerkId: 1, name: 1, role: 1, isActive: 1, email: 1 })
+      Admin.find({}, { clerkId: 1, name: 1, role: 1, isActive: 1, email: 1, payoutPercentage: 1 })
         .sort({ name: 1 })
         .lean(),
       Post.find(
@@ -146,6 +146,7 @@ export async function GET(_request: NextRequest) {
         role: admin.role,
         email: admin.email,
         isActive: admin.isActive,
+        payoutPercentage: (admin as any).payoutPercentage ?? 0,
       })),
       tuitionPosts: tuitionPosts.map((post) => {
         const postKey = normalizePostKey(post.postId);

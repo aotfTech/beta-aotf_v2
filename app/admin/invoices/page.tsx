@@ -595,6 +595,7 @@ export default function InvoicesPage() {
     totalPages: 0,
   });
   const [filterStatus, setFilterStatus] = useState("all");
+  const [invoiceType, setInvoiceType] = useState<"all" | "regular" | "payout">("all");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
@@ -615,6 +616,7 @@ export default function InvoicesPage() {
       try {
         const params = new URLSearchParams({ page: String(page), limit: "20" });
         if (filterStatus !== "all") params.set("status", filterStatus);
+        if (invoiceType !== "all") params.set("invoiceType", invoiceType);
         if (debouncedSearch) params.set("search", debouncedSearch);
         const res = await fetch(`/api/admin/invoices?${params}`, {
           credentials: "include",
@@ -632,7 +634,7 @@ export default function InvoicesPage() {
         setLoading(false);
       }
     },
-    [filterStatus, debouncedSearch]
+    [filterStatus, invoiceType, debouncedSearch]
   );
 
   useEffect(() => {
@@ -707,6 +709,32 @@ export default function InvoicesPage() {
           >
             <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
           </Button>
+        </div>
+
+        {/* Tabs for Invoice Type */}
+        <div className="flex gap-2 border-b border-default-200 pb-2 mb-4">
+          {(
+            [
+              { value: "all", label: "All Invoices" },
+              { value: "regular", label: "Tuition & Service" },
+              { value: "payout", label: "Admin Payouts" },
+            ] as const
+          ).map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => {
+                setInvoiceType(tab.value);
+                setPagination((p) => ({ ...p, page: 1 }));
+              }}
+              className={`px-4 py-2 text-sm font-semibold rounded-t-lg transition-colors ${
+                invoiceType === tab.value
+                  ? "text-primary border-b-2 border-primary bg-primary/5"
+                  : "text-default-500 hover:text-default-700 hover:bg-default-100"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {/* Stats row */}

@@ -26,9 +26,16 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
     const postId = searchParams.get("postId");
     const search = searchParams.get("search")?.trim();
+    const invoiceType = searchParams.get("invoiceType") ?? "all";
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filter: Record<string, any> = {};
+
+    if (invoiceType === "payout") {
+      filter.invoiceId = { $regex: /^INV-PAYOUT-/ };
+    } else if (invoiceType === "regular") {
+      filter.invoiceId = { $not: /^INV-PAYOUT-/ };
+    }
 
     if (status && ["paid", "unpaid", "partial"].includes(status)) {
       filter.paymentStatus = status;
@@ -39,12 +46,25 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
-      filter.$or = [
+      // If invoiceType already set a regex on invoiceId, we must combine it properly.
+      // But it's easier to just use $and for the type filter if search is present.
+      const searchOr = [
         { invoiceId: { $regex: search, $options: "i" } },
         { "recipient.name": { $regex: search, $options: "i" } },
         { "recipient.phone": { $regex: search, $options: "i" } },
         { postId: { $regex: search, $options: "i" } },
       ];
+
+      if (filter.invoiceId) {
+        // If we already have an invoiceId condition, put them both in $and
+        filter.$and = [
+          { invoiceId: filter.invoiceId },
+          { $or: searchOr },
+        ];
+        delete filter.invoiceId;
+      } else {
+        filter.$or = searchOr;
+      }
     }
 
     const skip = (page - 1) * limit;
