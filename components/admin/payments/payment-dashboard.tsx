@@ -9,7 +9,6 @@ import { Button } from "@heroui/button";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Chip } from "@heroui/chip";
 import { Divider } from "@heroui/divider";
-import { Input } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
 import { Tab, Tabs } from "@heroui/tabs";
 import { Spinner } from "@heroui/spinner";
@@ -43,6 +42,7 @@ type TuitionPostRow = {
   guardianName: string;
   guardianPhone: string;
   source?: string;
+  referralUserName?: string | null;
   monthlyBudget: number;
   paymentstatus?: "done" | "pending";
   paymentDate?: string;
@@ -252,8 +252,9 @@ export default function PaymentDashboard() {
       (post) => post.paymentstatus === "done",
     ).length;
     const unpaidTuition = filteredTuitionPosts.length - paidTuition;
-    const paidJobs = filteredJobs.filter((job) => Boolean(job.invoiceGenerated))
-      .length;
+    const paidJobs = filteredJobs.filter((job) =>
+      Boolean(job.invoiceGenerated),
+    ).length;
     const unpaidJobs = filteredJobs.length - paidJobs;
 
     return {
@@ -270,9 +271,13 @@ export default function PaymentDashboard() {
 
       const tuitionPaid = data.tuitionPosts.filter((post) => {
         if (post.createdByAdminClerkId !== admin.clerkId) return false;
-        const isPaid = post.paymentstatus === "done" || post.invoicePaymentStatus === "paid" || post.invoicePaymentStatus === "partial";
+        const isPaid =
+          post.paymentstatus === "done" ||
+          post.invoicePaymentStatus === "paid" ||
+          post.invoicePaymentStatus === "partial";
         if (!isPaid) return false;
-        const paidDate = parseDate(post.paymentDate) || parseDate(post.invoicePaymentDate);
+        const paidDate =
+          parseDate(post.paymentDate) || parseDate(post.invoicePaymentDate);
         if (!paidDate) return false;
         if (selectedYear && paidDate.getFullYear() !== Number(selectedYear))
           return false;
@@ -298,7 +303,14 @@ export default function PaymentDashboard() {
         jobCount: jobs.length,
       };
     });
-  }, [data.admins, data.tuitionPosts, filteredJobs, filteredTuitionPosts, selectedYear, selectedMonth]);
+  }, [
+    data.admins,
+    data.tuitionPosts,
+    filteredJobs,
+    filteredTuitionPosts,
+    selectedYear,
+    selectedMonth,
+  ]);
 
   useEffect(() => {
     if (!selectedAdminKey && data.admins.length) {
@@ -459,9 +471,9 @@ export default function PaymentDashboard() {
         </Select>
       </div>
 
-      <Card className="border border-slate-200/70 shadow-none">
-        <CardHeader className="flex items-start justify-between gap-2 px-2.5 py-2 sm:px-4 sm:py-3">
-          <div>
+      <Card className="border-none bg-slate-50 shadow-none">
+        <CardHeader className="flex  justify-between gap-2 px-2.5 py-2 sm:px-4 sm:py-3">
+          {/* <div>
             <p className="text-sm font-semibold text-slate-950">
               {selectedAdmin?.name ?? "Admin"}
             </p>
@@ -469,34 +481,27 @@ export default function PaymentDashboard() {
               {selectedAdmin?.role ?? "Unknown"} ·{" "}
               {selectedAdmin?.isActive ? "Active" : "Inactive"}
             </p>
-          </div>
-          <Chip color="primary" variant="flat" size="sm">
+          </div> */}
+          {/* <Chip color="primary" variant="flat" size="sm">
             {(selectedAdminStats?.tuitionCount ?? 0) +
               (selectedAdminStats?.jobCount ?? 0)}{" "}
             records
-          </Chip>
-        </CardHeader>
-
-        <CardBody className="space-y-3 px-2.5 pt-0 sm:px-4 sm:pb-4">
-          <div className="grid grid-cols-4 gap-1.5 text-[10px] sm:gap-2 sm:text-sm">
+          </Chip> */}
+          <div className="w-full grid grid-cols-4 gap-1.5 text-[10px] sm:gap-2 sm:text-sm">
             <div className="rounded-2xl bg-slate-50 p-2 text-center sm:p-3">
-              <p className="uppercase tracking-wide text-slate-500">Created</p>
+              <p className="uppercase tracking-wide text-slate-500">Posts</p>
               <p className="text-sm font-semibold text-slate-950 sm:text-base">
                 {selectedAdminStats?.tuitionCount ?? 0}
               </p>
             </div>
-            <div className="rounded-2xl bg-emerald-50 p-2 text-center sm:p-3">
-              <p className="uppercase tracking-wide text-emerald-700">Paid</p>
-              <p className="text-sm font-semibold text-emerald-900 sm:text-base">
-                {selectedAdminStats?.tuitionPaidCount ?? 0}
-              </p>
-            </div>
+
             <div className="rounded-2xl bg-slate-50 p-2 text-center sm:p-3">
               <p className="uppercase tracking-wide text-slate-500">Jobs</p>
               <p className="text-sm font-semibold text-slate-950 sm:text-base">
                 {selectedAdminStats?.jobCount ?? 0}
               </p>
             </div>
+
             <div className="rounded-2xl bg-indigo-50 p-2 text-center sm:p-3">
               <p className="uppercase tracking-wide text-indigo-700">
                 Combined
@@ -506,10 +511,18 @@ export default function PaymentDashboard() {
                   (selectedAdminStats?.jobCount ?? 0)}
               </p>
             </div>
+            <div className="rounded-2xl bg-emerald-50 p-2 text-center sm:p-3">
+              <p className="uppercase tracking-wide text-emerald-700">Paid</p>
+              <p className="text-sm font-semibold text-emerald-900 sm:text-base">
+                {selectedAdminStats?.tuitionPaidCount ?? 0}
+              </p>
+            </div>
           </div>
+        </CardHeader>
 
+        <CardBody className="space-y-3 px-1 pt-0 sm:px-4 sm:pb-4">
           <div className="grid gap-3 lg:grid-cols-2">
-            <Accordion variant="bordered">
+            <Accordion>
               <AccordionItem key="1" aria-label="Tuitions" title="Tuitions">
                 <div className="space-y-2">
                   {selectedAdminTuitionPosts.length ? (
@@ -537,16 +550,14 @@ export default function PaymentDashboard() {
                       </Card>
                     ))
                   ) : (
-                    <p className="rounded-xl bg-white px-3 py-2 text-sm text-slate-500 shadow-sm">
+                    <p className="rounded-xl bg-white px-2 py-2 text-sm text-slate-500 shadow-sm">
                       No tuition posts for this admin in the selected period.
                     </p>
                   )}
                 </div>
               </AccordionItem>
-            </Accordion>
 
-            <Accordion variant="bordered">
-              <AccordionItem key="1" aria-label="Jobs" title="Jobs">
+              <AccordionItem key="2" aria-label="Jobs" title="Jobs">
                 <div className="mt-2 space-y-2">
                   {selectedAdminJobs.length ? (
                     selectedAdminJobs.slice(0, 5).map((job) => (
@@ -614,7 +625,7 @@ export default function PaymentDashboard() {
 
       <Card className="border border-slate-200/70 shadow-none">
         <CardHeader className="flex items-start justify-between gap-2 px-2.5 py-2 sm:px-4 sm:py-3">
-          <div>
+          {/* <div>
             <p className="text-sm font-semibold text-slate-950">
               {selectedSource?.label ?? "Source"}
             </p>
@@ -625,10 +636,8 @@ export default function PaymentDashboard() {
           <Chip variant="flat" color="secondary" size="sm">
             {selectedSourceStats.tuitionCount + selectedSourceStats.jobCount}{" "}
             records
-          </Chip>
-        </CardHeader>
-        <CardBody className="space-y-3 px-2.5 pt-0 sm:px-4 sm:pb-4">
-          <div className="grid grid-cols-3 gap-1.5 text-[10px] sm:gap-2 sm:text-sm">
+          </Chip> */}
+          <div className="w-full grid grid-cols-3 gap-1.5 text-[10px] sm:gap-2 sm:text-sm">
             <div className="rounded-2xl bg-slate-50 p-2 text-center sm:p-3">
               <p className="uppercase tracking-wide text-slate-500">Tuition</p>
               <p className="text-sm font-semibold text-slate-950 sm:text-base">
@@ -651,7 +660,8 @@ export default function PaymentDashboard() {
               </p>
             </div>
           </div>
-
+        </CardHeader>
+        <CardBody className="space-y-3 px-2.5 pt-0 sm:px-4 sm:pb-4">
           <div className="grid gap-3 lg:grid-cols-2">
             <div className="rounded-2xl bg-slate-50 p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -667,8 +677,18 @@ export default function PaymentDashboard() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="font-medium text-slate-950">
-                            {post.guardianName}
+                            {post.postId} | {post.guardianName}
                           </p>
+                          {post.source === "referral" ? (
+                            <div className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-800">
+                              <span>Referral</span>
+                              <span className="h-1 w-1 rounded-full bg-amber-400" />
+                              <span>
+                                {post.referralUserName ??
+                                  "No referral"}
+                              </span>
+                            </div>
+                          ) : null}
                           <p className="text-[11px] text-slate-500">
                             {formatPhone(post.guardianPhone)}
                           </p>
@@ -678,9 +698,9 @@ export default function PaymentDashboard() {
                         </p>
                       </div>
                       <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-slate-600">
-                        <span>
+                        {/* <span>
                           {post.paymentstatus === "done" ? "Paid" : "Pending"}
-                        </span>
+                        </span> */}
                         <span>{post.monthlyBudget}</span>
                       </div>
                     </div>
@@ -707,7 +727,7 @@ export default function PaymentDashboard() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="font-medium text-slate-950">
-                            {job.title}
+                            {job.jobId} | {job.title}
                           </p>
                           <p className="text-[11px] text-slate-500">
                             {job.clientName}
@@ -718,7 +738,7 @@ export default function PaymentDashboard() {
                         </p>
                       </div>
                       <div className="mt-1 flex items-center justify-between gap-2 text-[11px] text-slate-600">
-                        <span>{job.status ?? "Open"}</span>
+                        {/* <span>{job.status ?? "Open"}</span> */}
                         <span>{formatPhone(job.phoneNumber)}</span>
                       </div>
                     </div>
@@ -786,10 +806,18 @@ export default function PaymentDashboard() {
             createdAt: post.createdAt,
             tuitionFee: post.monthlyBudget,
             statusLabel: "Payment status",
-            statusValue: (post.paymentstatus === "done" || post.invoicePaymentStatus === "paid" || post.invoicePaymentStatus === "partial") ? "Paid" : "Pending",
+            statusValue:
+              post.paymentstatus === "done" ||
+              post.invoicePaymentStatus === "paid" ||
+              post.invoicePaymentStatus === "partial"
+                ? "Paid"
+                : "Pending",
             invoiceId: post.invoiceId,
             invoiceGenerated: post.invoiceGenerated,
-            isPaid: post.paymentstatus === "done" || post.invoicePaymentStatus === "paid" || post.invoicePaymentStatus === "partial",
+            isPaid:
+              post.paymentstatus === "done" ||
+              post.invoicePaymentStatus === "paid" ||
+              post.invoicePaymentStatus === "partial",
           })),
           ...filteredJobs.map((job) => ({
             kind: "job" as const,
@@ -1008,13 +1036,24 @@ export default function PaymentDashboard() {
               <p className="text-xl font-black text-emerald-900">
                 {
                   data.tuitionPosts.filter((post) => {
-                    const isPaid = post.paymentstatus === "done" || post.invoicePaymentStatus === "paid" || post.invoicePaymentStatus === "partial";
+                    const isPaid =
+                      post.paymentstatus === "done" ||
+                      post.invoicePaymentStatus === "paid" ||
+                      post.invoicePaymentStatus === "partial";
                     if (!isPaid) return false;
-                    const paidDate = parseDate(post.paymentDate) || parseDate(post.invoicePaymentDate);
+                    const paidDate =
+                      parseDate(post.paymentDate) ||
+                      parseDate(post.invoicePaymentDate);
                     if (!paidDate) return false;
-                    if (selectedYear && paidDate.getFullYear() !== Number(selectedYear))
+                    if (
+                      selectedYear &&
+                      paidDate.getFullYear() !== Number(selectedYear)
+                    )
                       return false;
-                    if (selectedMonth && String(paidDate.getMonth() + 1) !== selectedMonth)
+                    if (
+                      selectedMonth &&
+                      String(paidDate.getMonth() + 1) !== selectedMonth
+                    )
                       return false;
                     return true;
                   }).length

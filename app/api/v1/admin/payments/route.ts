@@ -4,12 +4,17 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import Admin from "@/lib/models/Admin";
 import Invoice from "@/lib/models/Invoice";
+import Referral from "@/lib/models/Referral";
 import Post from "@/lib/models/Post";
 import Job from "@/lib/models/Job";
 
 function stringifyId(value: unknown) {
   if (!value) return undefined;
   return typeof value === "string" ? value : value?.toString?.();
+}
+
+function normalizePostKey(value: unknown) {
+  return stringifyId(value)?.trim() ?? "";
 }
 
 async function getClerkMetadata(userId: string) {
@@ -103,7 +108,25 @@ export async function GET(_request: NextRequest) {
         .lean(),
     ]);
 
-    const tuitionPostIds = tuitionPosts.map((post) => post.postId).filter(Boolean);
+    const tuitionPostIds = tuitionPosts
+      .map((post) => normalizePostKey(post.postId))
+      .filter(Boolean);
+    const tuitionPostIdSet = new Set(tuitionPostIds);
+    const referrals = tuitionPostIds.length
+      ? await Referral.find({}, { postId: 1, referralUserName: 1 }).lean()
+      : [];
+
+    const referralByPostId = new Map(
+      referrals
+        .filter(
+          (referral) =>
+            referral.postId &&
+            referral.referralUserName &&
+            tuitionPostIdSet.has(normalizePostKey(referral.postId)),
+        )
+        .map((referral) => [normalizePostKey(referral.postId), referral.referralUserName.trim()]),
+    );
+
     const invoicePostIdSet = new Set(tuitionPostIds);
     const invoices = tuitionPostIds.length
       ? await Invoice.find({ isLatest: true }, { postId: 1, invoiceId: 1, paymentStatus: 1, paymentDate: 1, isLatest: 1 }).lean()
@@ -112,7 +135,7 @@ export async function GET(_request: NextRequest) {
     const invoiceByPostId = new Map(
       invoices
         .filter((invoice) => invoice.postId && invoice.invoiceId && invoicePostIdSet.has(invoice.postId))
-        .map((invoice) => [invoice.postId as string, invoice]),
+        .map((invoice) => [normalizePostKey(invoice.postId), invoice]),
     );
 
     return NextResponse.json({
@@ -125,12 +148,14 @@ export async function GET(_request: NextRequest) {
         isActive: admin.isActive,
       })),
       tuitionPosts: tuitionPosts.map((post) => {
-        const invoice = invoiceByPostId.get(post.postId);
+        const postKey = normalizePostKey(post.postId);
+        const invoice = invoiceByPostId.get(postKey);
         return {
-          postId: post.postId,
+          postId: postKey,
           guardianName: post.guardianName,
           guardianPhone: post.guardianPhone,
           source: post.source,
+          referralUserName: referralByPostId.get(postKey) ?? "No referral",
           monthlyBudget: post.monthlyBudget,
           paymentstatus: post.paymentstatus,
           paymentDate: post.paymentDate,
