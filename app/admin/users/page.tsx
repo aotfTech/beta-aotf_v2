@@ -21,6 +21,7 @@ import {
 import AdminSearchBar from "@/components/admin/ui/AdminSearchBar";
 import { reportClientError } from "@/lib/client-report-error";
 import { formatPhone } from "@/lib/utils/phone";
+import { Chip } from "@heroui/chip";
 
 type Role = "teacher" | "candidate";
 type Status = "all" | "active" | "blocked" | "deleted";
@@ -306,7 +307,7 @@ export default function UsersPage() {
   );
 
   useEffect(() => {
-    void loadBundle(true);
+    void loadBundle(false);
   }, [filterKey, loadBundle]);
 
   useEffect(() => {
@@ -374,13 +375,13 @@ export default function UsersPage() {
   const tabSummary =
     selectedTab === "teacher"
       ? {
-          total: summary?.teachers ?? 0,
-          active: users.filter((u) => u.statusValue === "active").length,
-        }
+        total: summary?.teachers ?? 0,
+        active: users.filter((u) => u.statusValue === "active").length,
+      }
       : {
-          total: summary?.candidates ?? 0,
-          active: users.filter((u) => u.statusValue === "active").length,
-        };
+        total: summary?.candidates ?? 0,
+        active: users.filter((u) => u.statusValue === "active").length,
+      };
 
   return (
     <div className="w-full space-y-2 px-4">
@@ -466,32 +467,47 @@ export default function UsersPage() {
         <div className="py-16 text-center text-default-500">
           {isRefreshing ? "Loading users…" : "Syncing and loading users…"}
         </div>
-      ) : null}
-
-      <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+      ) : <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
         {users.map((user) => (
           <Card key={user.id} className="w-full border border-default-200">
             <CardHeader className="flex gap-3">
-              <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary font-semibold">
-                {user.avatarUrl ? (
-                  <img
-                    src={user.avatarUrl}
-                    alt={user.name}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  getInitials(user.name) || (
-                    <User className="text-primary" size={24} />
-                  )
-                )}
-              </div>
-              <div className="flex flex-col">
-                <p className="text-md font-semibold">{user.name}</p>
-                <p className="text-small text-default-500 capitalize">
-                  {user.role}
-                </p>
-                <p className="text-tiny text-default-400">@{user.username}</p>
-              </div>
+              <div className="w-full flex flex-row items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary font-semibold">
+                    {user.avatarUrl ? (
+                      <img
+                        src={user.avatarUrl}
+                        alt={user.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      getInitials(user.name) || (
+                        <User className="text-primary" size={24} />
+                      )
+                    )}
+                  </div>
+                  <div className="flex flex-col">
+                    <p className="text-md font-semibold">{user.name}</p>
+                    <p className="text-small text-default-500 capitalize">
+                      {user.role}
+                    </p>
+                    <p className="text-tiny text-default-400">@{user.username}</p>
+                  </div>
+                </div>
+
+                <Chip
+                  size="sm"
+                  variant="flat"
+                  color={
+                    user.statusValue === "active"
+                      ? "success"
+                      : user.statusValue === "blocked"
+                        ? "warning"
+                        : "default"
+                  }
+                >
+                  {statusLabels[user.statusValue]}
+                </Chip></div>
             </CardHeader>
             <CardBody className="space-y-2">
               <div className="flex items-center gap-2 text-sm">
@@ -531,19 +547,6 @@ export default function UsersPage() {
                 rel="noopener noreferrer"
               >
                 View Profile
-              </Button>
-              <Button
-                size="sm"
-                variant="flat"
-                color={
-                  user.statusValue === "active"
-                    ? "success"
-                    : user.statusValue === "blocked"
-                      ? "warning"
-                      : "default"
-                }
-              >
-                {statusLabels[user.statusValue]}
               </Button>
             </CardFooter>
             <CardFooter className="gap-2 pt-0">
@@ -600,7 +603,9 @@ export default function UsersPage() {
             </CardFooter>
           </Card>
         ))}
-      </div>
+      </div>}
+
+
 
       {!isLoading && users.length === 0 && (
         <div className="text-center py-12">

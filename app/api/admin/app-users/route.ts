@@ -87,17 +87,6 @@ async function requireManageUsersAdmin(userId: string) {
   return { admin: currentAdmin };
 }
 
-function buildSummary(users: Array<{ role: string; status: string }>) {
-  return {
-    total: users.length,
-    active: users.filter((user) => user.status === "active").length,
-    blocked: users.filter((user) => user.status === "blocked").length,
-    deleted: users.filter((user) => user.status === "deleted").length,
-    teachers: users.filter((user) => user.role === "teacher").length,
-    candidates: users.filter((user) => user.role === "teacher_candidate").length,
-  };
-}
-
 async function getAdminClerkIds() {
   return new Set((await Admin.find({}).distinct("clerkId")).map(String));
 }
@@ -110,68 +99,103 @@ function buildStatusQuery(status?: string) {
   return query;
 }
 
-async function loadAppUsersForRole(
-  dbRole: AppUserDbRole,
+function buildAggregationPipeline(
   statusQuery: Record<string, unknown>,
   adminClerkIds: Set<string>,
   search: string,
-  options?: { sort?: boolean },
+  baseMatch: Record<string, unknown> = {}
 ) {
-  let query = User.find({ ...statusQuery, role: dbRole });
-  if (options?.sort !== false) {
-    query = query.sort({ createdAt: -1 });
+  const pipeline: any[] = [
+    { $match: { ...statusQuery, ...baseMatch, clerkId: { $nin: Array.from(adminClerkIds) } } }
+  ];
+
+  if (search) {
+    const searchRegex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), "i");
+    pipeline.push({
+      $lookup: {
+        from: "profiles",
+        localField: "clerkId",
+        foreignField: "clerkId",
+        as: "profile",
+      },
+    });
+    pipeline.push({
+      $unwind: { path: "$profile", preserveNullAndEmptyArrays: true },
+    });
+    pipeline.push({
+      $match: {
+        $or: [
+          { username: searchRegex },
+          { "profile.displayName": searchRegex },
+          { "profile.phone": searchRegex },
+          { "profile.whatsapp": searchRegex },
+        ],
+      },
+    });
   }
 
-  const users = (await query.lean()) as LeanUser[];
-
-  let appUsers = users.filter((user) => !adminClerkIds.has(String(user.clerkId)));
-
-  if (!search) return appUsers;
-
-  const clerkIdList = appUsers.map((user) => String(user.clerkId));
-  const profiles = await Promise.all(
-    clerkIdList.map((clerkId) => Profile.findOne({ clerkId }).lean()),
-  );
-  const profileByClerkId = new Map(
-    profiles
-      .filter((profile): profile is NonNullable<typeof profile> => profile !== null)
-      .map((profile) => [String(profile.clerkId), profile]),
-  );
-
-  return appUsers.filter((user) => {
-    const profileData = profileByClerkId.get(String(user.clerkId));
-    return (
-      normalizeText(user.username).includes(search) ||
-      normalizeText(profileData?.displayName).includes(search) ||
-      normalizeText(profileData?.phone).includes(search) ||
-      normalizeText(profileData?.whatsapp).includes(search)
-    );
-  });
+  return pipeline;
 }
 
-async function enrichUserPage(pageUsers: LeanUser[]) {
-  const clerkIdList = pageUsers.map((user) => String(user.clerkId));
-  const profiles = await Promise.all(
-    clerkIdList.map((clerkId) => Profile.findOne({ clerkId }).lean()),
-  );
-  const profileByClerkId = new Map(
-    profiles
-      .filter((profile): profile is NonNullable<typeof profile> => profile !== null)
-      .map((profile) => [String(profile.clerkId), profile]),
-  );
+async function fetchRolePage(
+  friendlyRole: "teacher" | "candidate",
+  page: number,
+  statusQuery: Record<string, unknown>,
+  adminClerkIds: Set<string>,
+  search: string,
+) {
+  const dbRole = toDbRole(friendlyRole);
+  const limit = PAGE_SIZE;
+
+  const basePipeline = buildAggregationPipeline(statusQuery, adminClerkIds, search, { role: dbRole });
+
+  // Count total matches for this role
+  const countPipeline = [...basePipeline, { $count: "total" }];
+  const [countResult] = await User.aggregate(countPipeline);
+  const total = countResult?.total || 0;
+
+  const totalPages = Math.max(Math.ceil(total / limit), 1);
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const skip = (safePage - 1) * limit;
+
+  // Fetch paginated users
+  const dataPipeline = [
+    ...basePipeline,
+    { $sort: { createdAt: -1 } },
+    { $skip: skip },
+    { $limit: limit },
+  ];
+
+  if (!search) {
+    dataPipeline.push({
+      $lookup: {
+        from: "profiles",
+        localField: "clerkId",
+        foreignField: "clerkId",
+        as: "profile",
+      },
+    });
+    dataPipeline.push({
+      $unwind: { path: "$profile", preserveNullAndEmptyArrays: true },
+    });
+  }
+
+  const pageUsers = await User.aggregate(dataPipeline);
 
   const client = await clerkClient();
-  return (
+  const users = (
     await Promise.all(
       pageUsers.map(async (user) => {
         const clerkIdStr = String(user.clerkId);
-        const profileData = profileByClerkId.get(clerkIdStr) ?? null;
+        const profileData = user.profile;
 
-        let clerkData = null;
+        let clerkData: any = null;
         try {
           clerkData = await client.users.getUser(clerkIdStr);
-        } catch {
-          // Fall back to MongoDB-only fields when Clerk is unavailable.
+        } catch (err: any) {
+          if (err.status !== 404) {
+            console.error(`[app-users] Failed to fetch clerk user ${clerkIdStr}:`, err.message || err);
+          }
         }
 
         if (
@@ -181,7 +205,10 @@ async function enrichUserPage(pageUsers: LeanUser[]) {
           return null;
         }
 
-        const email = clerkData?.primaryEmailAddress?.emailAddress ?? null;
+        const primaryEmail = clerkData?.emailAddresses?.find(
+          (e: { id: string; emailAddress: string }) => e.id === clerkData.primaryEmailAddressId
+        );
+        const email = primaryEmail?.emailAddress ?? clerkData?.emailAddresses?.[0]?.emailAddress ?? null;
         const displayName =
           profileData?.displayName ??
           clerkData?.fullName?.trim() ??
@@ -210,33 +237,9 @@ async function enrichUserPage(pageUsers: LeanUser[]) {
           profileUrl: `/u/${encodeURIComponent(user.username)}`,
           verifyUrl: `/verify/${encodeURIComponent(`AOTF-${user.role === "teacher_candidate" ? "C" : "T"}-${user.username.toUpperCase()}`)}`,
         };
-      }),
+      })
     )
-  ).filter((user): user is NonNullable<typeof user> => user !== null);
-}
-
-async function fetchRolePage(
-  friendlyRole: "teacher" | "candidate",
-  page: number,
-  statusQuery: Record<string, unknown>,
-  adminClerkIds: Set<string>,
-  search: string,
-) {
-  const dbRole = toDbRole(friendlyRole);
-  const matchedUsers = await loadAppUsersForRole(
-    dbRole,
-    statusQuery,
-    adminClerkIds,
-    search,
-  );
-
-  const limit = PAGE_SIZE;
-  const total = matchedUsers.length;
-  const totalPages = Math.max(Math.ceil(total / limit), 1);
-  const safePage = Math.min(Math.max(page, 1), totalPages);
-  const start = (safePage - 1) * limit;
-  const pageUsers = matchedUsers.slice(start, start + limit);
-  const users = await enrichUserPage(pageUsers);
+  ).filter((u): u is NonNullable<typeof u> => u !== null);
 
   return {
     users,
@@ -254,15 +257,43 @@ async function buildGlobalSummary(
   adminClerkIds: Set<string>,
   search: string,
 ) {
-  const [teachers, candidates] = await Promise.all([
-    loadAppUsersForRole("teacher", statusQuery, adminClerkIds, search, {
-      sort: false,
-    }),
-    loadAppUsersForRole("teacher_candidate", statusQuery, adminClerkIds, search, {
-      sort: false,
-    }),
-  ]);
-  return buildSummary([...teachers, ...candidates]);
+  const pipeline = buildAggregationPipeline(statusQuery, adminClerkIds, search);
+
+  pipeline.push({
+    $group: {
+      _id: null,
+      total: { $sum: 1 },
+      active: {
+        $sum: { $cond: [{ $eq: ["$status", "active"] }, 1, 0] },
+      },
+      blocked: {
+        $sum: { $cond: [{ $eq: ["$status", "blocked"] }, 1, 0] },
+      },
+      deleted: {
+        $sum: { $cond: [{ $eq: ["$status", "deleted"] }, 1, 0] },
+      },
+      teachers: {
+        $sum: { $cond: [{ $eq: ["$role", "teacher"] }, 1, 0] },
+      },
+      candidates: {
+        $sum: { $cond: [{ $eq: ["$role", "teacher_candidate"] }, 1, 0] },
+      },
+    },
+  });
+
+  const [result] = await User.aggregate(pipeline);
+  if (!result) {
+    return { total: 0, active: 0, blocked: 0, deleted: 0, teachers: 0, candidates: 0 };
+  }
+
+  return {
+    total: result.total,
+    active: result.active,
+    blocked: result.blocked,
+    deleted: result.deleted,
+    teachers: result.teachers,
+    candidates: result.candidates,
+  };
 }
 
 export async function POST(req: Request) {

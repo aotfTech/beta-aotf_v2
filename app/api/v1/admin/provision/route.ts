@@ -421,9 +421,13 @@ export async function POST(req: Request) {
     }
 
     reportError(error, { route: "POST /api/v1/admin/provision" });
+    
+    const errObj = error as any;
+    const clerkErrorMsg = errObj?.errors?.[0]?.longMessage || errObj?.errors?.[0]?.message;
+    
     return NextResponse.json(
-      { error: "Failed to provision admin" },
-      { status: 500 },
+      { error: clerkErrorMsg || "Failed to provision admin" },
+      { status: errObj?.status || 500 },
     );
   }
 }

@@ -24,7 +24,7 @@ async function main() {
   const { isAppClerkUser, seedClerkUserInMongo } = await import(
     "../lib/migration/seed-clerk-user"
   );
-  const { createClerkClient } = await import("@clerk/backend");
+  const { createClerkClient } = await import("@clerk/nextjs/server");
 
   const secretKey = process.env.CLERK_SECRET_KEY;
   if (!secretKey) throw new Error("Missing CLERK_SECRET_KEY");

@@ -15,7 +15,6 @@
     "ship:zip": "mkdir -p package && rm -f package/aotf_v2.zip && zip -r package/aotf_v2.zip . -x 'node_modules/*' '.git/*' '.next/*' 'package/*' '*.zip'"
   },
   "dependencies": {
-    "@clerk/backend": "^3.4.14",
     "@clerk/nextjs": "^6.39.0",
     "@heroui/accordion": "2.2.26",
     "@heroui/alert": "2.2.29",
