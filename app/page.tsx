@@ -20,7 +20,7 @@ export default function Home() {
         <ImageSlider
           slides={[
             {
-              src: "https://res.cloudinary.com/dzko1daqg/image/upload/v1780142208/img1_wiaiwl.jpg",
+              src: "https://res.cloudinary.com/dzko1daqg/image/upload/v1786122925/ChatGPT_Image_Aug_7_2026_10_34_58_PM_uoh9e9.png",
               title: "Find a Tutor",
               // description in 5 -6 words
               description: "Discover personalized learning with trusted tutors",
@@ -28,7 +28,7 @@ export default function Home() {
               link: "/posts",
             },
             {
-              src: "https://res.cloudinary.com/dzko1daqg/image/upload/v1780142208/img2_lxwpcc.jpg",
+              src: "https://res.cloudinary.com/dzko1daqg/image/upload/v1786122910/ChatGPT_Image_Aug_7_2026_10_43_34_PM_lpvgdo.png",
               title: "Hire a Freelancer",
               description:
                 "Connect with verified freelancers for your projects",
@@ -36,7 +36,7 @@ export default function Home() {
               link: "/jobs",
             },
             {
-              src: "https://res.cloudinary.com/dzko1daqg/image/upload/v1780142208/img3_hsphm0.jpg",
+              src: "https://res.cloudinary.com/dzko1daqg/image/upload/v1786122910/ChatGPT_Image_Aug_7_2026_10_42_09_PM_mgm38q.png",
               title: "Join as Educator",
               description: "Share your knowledge and earn by teaching students",
               buttonText: "Join Now",
