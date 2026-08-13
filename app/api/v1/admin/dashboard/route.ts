@@ -26,9 +26,26 @@ function daysAgo(n: number) {
   return d;
 }
 
+export function computeMonthBounds(now: Date) {
+  const year  = now.getFullYear();
+  const month = now.getMonth(); // 0-indexed
+  return {
+    monthStart:     new Date(year, month,     1,  0,  0,  0,   0),
+    monthEnd:       new Date(year, month + 1, 0, 23, 59, 59, 999),
+    prevMonthStart: new Date(year, month - 1, 1,  0,  0,  0,   0),
+    prevMonthEnd:   new Date(year, month,     0, 23, 59, 59, 999),
+  };
+}
+
+export function computeGrowthPct(current: number, previous: number): number {
+  const pct = ((current - previous) / Math.max(previous, 1)) * 100;
+  return Math.round(pct * 10) / 10;
+}
+
 // ─── Role-specific aggregators ──────────────────────────────────────────────
 
 async function getSuperAdminData(adminClerkId: string) {
+  const { monthStart, monthEnd, prevMonthStart, prevMonthEnd } = computeMonthBounds(new Date());
   const thirtyDaysAgo = daysAgo(30);
   const todayStart    = startOfDay(new Date());
 
@@ -45,6 +62,11 @@ async function getSuperAdminData(adminClerkId: string) {
     recentAuditLog,
     totalFeedbacks,
     openFeedbacks,
+    postsFacetResult,
+    classificationResult,
+    currentMonthUsers,
+    prevMonthUsers,
+    blockedUsers,
   ] = await Promise.all([
     // Total registered users
     User.countDocuments({ status: "active" }),
@@ -114,7 +136,113 @@ async function getSuperAdminData(adminClerkId: string) {
 
     // Open (unresolved) feedbacks
     Feedback.countDocuments({ status: "open" }),
+
+    // Posts this month: total, paid count, and revenue (monthlyBudget on paid posts)
+    Post.aggregate([
+      { $match: { createdAt: { $gte: monthStart, $lte: monthEnd } } },
+      {
+        $facet: {
+          totalAndPayment: [
+            {
+              $group: {
+                _id: null,
+                total:   { $sum: 1 },
+                paid:    { $sum: { $cond: [{ $eq: ["$paymentstatus", "done"] }, 1, 0] } },
+                revenue: { $sum: { $cond: [{ $eq: ["$paymentstatus", "done"] }, "$monthlyBudget", 0] } },
+              }
+            }
+          ]
+        }
+      }
+    ]),
+
+    // Approved / Ongoing / Cancelled post classification this month
+    Post.aggregate([
+      { $match: { createdAt: { $gte: monthStart, $lte: monthEnd } } },
+      {
+        $lookup: {
+          from: "applications",
+          localField: "postId",
+          foreignField: "postId",
+          as: "applications",
+        }
+      },
+      {
+        $addFields: {
+          isApproved: {
+            $gt: [
+              { $size: { $filter: { input: "$applications", cond: { $eq: ["$$this.status", "approved"] } } } },
+              0
+            ]
+          },
+          hasInProgress: {
+            $gt: [
+              { $size: { $filter: { input: "$applications", cond: { $in: ["$$this.status", ["DC", "GC"]] } } } },
+              0
+            ]
+          },
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          approved: { $sum: { $cond: ["$isApproved", 1, 0] } },
+          ongoing: {
+            $sum: {
+              $cond: [
+                { $and: [{ $eq: ["$isApproved", false] }, { $ne: ["$status", "cancelled"] }, "$hasInProgress"] },
+                1, 0
+              ]
+            }
+          },
+          cancelled: {
+            $sum: {
+              $cond: [
+                { $and: [{ $eq: ["$isApproved", false] }, { $eq: ["$status", "cancelled"] }] },
+                1, 0
+              ]
+            }
+          },
+        }
+      }
+    ]),
+
+    // Current month new users
+    User.countDocuments({ createdAt: { $gte: monthStart, $lte: monthEnd } }),
+
+    // Previous month new users (for growth %)
+    User.countDocuments({ createdAt: { $gte: prevMonthStart, $lte: prevMonthEnd } }),
+
+    // All-time blocked users
+    User.countDocuments({ status: "blocked" }),
   ]);
+
+  // Normalise posts facet result — empty array means no posts this month
+  const postsFacetRaw = (postsFacetResult as Array<{ totalAndPayment: Array<{ total: number; paid: number; revenue: number }> }>)?.[0]?.totalAndPayment?.[0] ?? { total: 0, paid: 0, revenue: 0 };
+  const unpaid = postsFacetRaw.total - postsFacetRaw.paid;
+  const postsThisMonthRaw = {
+    total:   postsFacetRaw.total,
+    paid:    postsFacetRaw.paid,
+    unpaid,
+    revenue: postsFacetRaw.revenue,
+  };
+
+  // Normalise classification result — empty array means no posts this month
+  const classificationRaw = (classificationResult as Array<{ approved: number; ongoing: number; cancelled: number }>)?.[0] ?? { approved: 0, ongoing: 0, cancelled: 0 };
+  const approvedPostsThisMonthRaw = {
+    approved:  classificationRaw.approved,
+    ongoing:   classificationRaw.ongoing,
+    cancelled: classificationRaw.cancelled,
+  };
+
+  // Compute growth percentage for users
+  const growthPct = computeGrowthPct(currentMonthUsers as number, prevMonthUsers as number);
+
+  const usersThisMonthRaw = {
+    total:    currentMonthUsers as number,
+    growthPct,
+    blocked:  blockedUsers as number,
+  };
 
   // Normalise enquiry breakdown into a map
   const enqMap: Record<string, number> = {};
@@ -137,6 +265,7 @@ async function getSuperAdminData(adminClerkId: string) {
   return {
     role: "super_admin" as const,
     stats: {
+      // ── Existing keys (preserved, unchanged) ────
       totalUsers,
       activePosts,
       enquiries: {
@@ -147,6 +276,24 @@ async function getSuperAdminData(adminClerkId: string) {
       revenue: (revenueTotal as Array<{ total: number }>)[0]?.total ?? 0,
       admins: adminMap,
       feedbacks: { total: totalFeedbacks, open: openFeedbacks },
+
+      // ── New per-month keys (additive) ────────────────────────────────
+      postsThisMonth: {
+        total:  postsThisMonthRaw.total,
+        paid:   postsThisMonthRaw.paid,
+        unpaid: postsThisMonthRaw.unpaid,
+      },
+      approvedPostsThisMonth: {
+        approved:  approvedPostsThisMonthRaw.approved,
+        ongoing:   approvedPostsThisMonthRaw.ongoing,
+        cancelled: approvedPostsThisMonthRaw.cancelled,
+      },
+      usersThisMonth: {
+        total:     usersThisMonthRaw.total,
+        growthPct: usersThisMonthRaw.growthPct,
+        blocked:   usersThisMonthRaw.blocked,
+      },
+      revenueThisMonth: postsThisMonthRaw.revenue,
     },
     postsByStatus: postsMap,
     recentPayments,

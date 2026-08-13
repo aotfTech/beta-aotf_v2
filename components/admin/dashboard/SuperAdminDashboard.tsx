@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   Users,
   BookOpen,
-  MessageSquare,
   IndianRupee,
   ShieldCheck,
   Star,
@@ -25,6 +24,22 @@ export interface SuperAdminPayload {
     revenue: number;
     admins: Record<string, number>;
     feedbacks: { total: number; open: number };
+    postsThisMonth: {
+      total: number;
+      paid: number;
+      unpaid: number;
+    };
+    approvedPostsThisMonth: {
+      approved: number;
+      ongoing: number;
+      cancelled: number;
+    };
+    usersThisMonth: {
+      total: number;
+      growthPct: number;
+      blocked: number;
+    };
+    revenueThisMonth: number;
   };
   postsByStatus: Record<string, number>;
   recentPayments: Array<{
@@ -234,38 +249,51 @@ export default function SuperAdminDashboard({ data }: { data: SuperAdminPayload 
     .map(([role, count]) => `${count} ${role.replace("_", " ")}`)
     .join(" · ");
 
+  const growthPct = stats.usersThisMonth.growthPct;
+  const sign = growthPct > 0 ? "+" : "";
+  const userSub = `${sign}${growthPct.toFixed(1)}% vs last month · ${stats.usersThisMonth.blocked} blocked`;
+
   return (
     <div className="space-y-8">
 
       {/* ── Stat Cards ── */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        <StatCard
-          icon={Users}
-          label="Registered Users"
-          value={fmt(stats.totalUsers)}
-          accent="bg-blue-500"
-          href="/admin/users"
-        />
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
         <StatCard
           icon={BookOpen}
-          label="Active Posts"
-          value={fmt(stats.activePosts)}
-          sub={`${postsByStatus["matched"] ?? 0} matched · ${postsByStatus["closed"] ?? 0} closed`}
+          label="Posts This Month"
+          value={fmt(stats.postsThisMonth.total)}
+          sub={`${stats.postsThisMonth.paid} paid · ${stats.postsThisMonth.unpaid} unpaid`}
           accent="bg-indigo-500"
           href="/admin/tuitions"
         />
         <StatCard
-          icon={MessageSquare}
-          label="Enquiries"
-          value={fmt(stats.enquiries.total)}
-          sub={`${stats.enquiries.new} new · ${stats.enquiries.inProgress} in progress`}
-          accent="bg-amber-500"
-          href="/admin/enquiries"
+          icon={TrendingUp}
+          label="Approved Posts"
+          value={fmt(stats.approvedPostsThisMonth.approved)}
+          sub={`${stats.approvedPostsThisMonth.ongoing} ongoing · ${stats.approvedPostsThisMonth.cancelled} cancelled`}
+          accent="bg-green-500"
+          href="/admin/tuitions"
+        />
+        <StatCard
+          icon={Users}
+          label="Registered Users"
+          value={fmt(stats.usersThisMonth.total)}
+          sub={userSub}
+          accent="bg-blue-500"
+          href="/admin/users"
+        />
+        <StatCard
+          icon={Star}
+          label="Feedbacks"
+          value={fmt(stats.feedbacks.total)}
+          sub={`${stats.feedbacks.open} open / unresolved`}
+          accent="bg-pink-500"
+          href="/admin/feedbacks"
         />
         <StatCard
           icon={IndianRupee}
           label="Total Revenue"
-          value={fmtCurrency(stats.revenue / 100)}
+          value={fmtCurrency(stats.revenueThisMonth)}
           accent="bg-emerald-500"
           href="/admin/payments"
         />
@@ -276,14 +304,6 @@ export default function SuperAdminDashboard({ data }: { data: SuperAdminPayload 
           sub={adminSubLabel}
           accent="bg-purple-500"
           href="/admin/settings"
-        />
-        <StatCard
-          icon={Star}
-          label="Feedbacks"
-          value={fmt(stats.feedbacks.total)}
-          sub={`${stats.feedbacks.open} open / unresolved`}
-          accent="bg-pink-500"
-          href="/admin/feedbacks"
         />
       </div>
 

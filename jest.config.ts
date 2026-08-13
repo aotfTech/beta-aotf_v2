@@ -7,8 +7,11 @@ const config: Config = {
     // Resolve @/ alias to project root
     "^@/(.*)$": "<rootDir>/$1",
   },
-  // Only run tests in lib/services/__tests__ by default
-  testMatch: ["<rootDir>/lib/services/__tests__/**/*.test.ts"],
+  // Run tests in lib/services/__tests__ and root-level __tests__
+  testMatch: [
+    "<rootDir>/lib/services/__tests__/**/*.test.ts",
+    "<rootDir>/__tests__/**/*.test.ts",
+  ],
   // ts-jest config: override module to commonjs (project uses esnext)
   transform: {
     "^.+\\.tsx?$": [
