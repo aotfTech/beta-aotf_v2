@@ -24,27 +24,6 @@ export default function DocsPage() {
                     AOTF aims to bridge that gap by creating a trusted platform where learning, mentorship, and opportunities come together.
                   </p>
                 </div>
-                <form className="space-y-4">
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <label htmlFor="name">Name</label>
-                      <Input id="name" placeholder="Enter your name" />
-                    </div>
-                    <div className="space-y-2">
-                      <label htmlFor="email">Email</label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="Enter your email"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="message">Message</label>
-                    <Textarea id="message" placeholder="Enter your message" />
-                  </div>
-                  <Button type="submit">Submit</Button>
-                </form>
               </div>
               <div className="space-y-4">
                 <div className="space-y-2">

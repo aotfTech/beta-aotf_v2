@@ -9,7 +9,7 @@ export default function OurServices() {
         <div className="relative shadow-2xl shadow-indigo-600/40 rounded-2xl overflow-hidden shrink-0">
           <img
             className="max-w-md w-full object-cover rounded-2xl"
-            src="./our_services.png"
+            src="https://res.cloudinary.com/dzko1daqg/image/upload/v1786900631/ChatGPT_Image_Aug_16_2026_10_45_17_PM_xtuzs2.png"
             alt=""
           />
         </div>

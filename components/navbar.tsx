@@ -171,7 +171,7 @@ export const Navbar = () => {
             color="primary"
             onPress={() => router.push("/sign-in")}
           >
-            Log In
+            Log In / Register
           </Button>
         </NavbarContent>
       </SignedOut>
