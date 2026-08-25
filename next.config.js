@@ -8,6 +8,8 @@ const DEFAULT_CLERK_ORIGINS = [
   "https://clerk.aotf.sayantanbal.in",
   "https://clerk.beta.aotf.in",
   "https://clerk.aotf.in",
+  "https://www.aotf.in",
+  "https://aotf.in",
 ];
 
 function toHttpsOrigin(value) {
