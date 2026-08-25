@@ -56,3 +56,4 @@ package/aotf_v2.zip
 .env.sentry-build-plugin
 
 .source
+.env.prod

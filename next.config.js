@@ -6,6 +6,8 @@ const DEFAULT_CLERK_ORIGINS = [
   "https://*.clerk.accounts.dev",
   "https://*.clerk.dev",
   "https://clerk.aotf.sayantanbal.in",
+  "https://clerk.beta.aotf.in",
+  "https://clerk.aotf.in",
 ];
 
 function toHttpsOrigin(value) {
@@ -101,6 +103,7 @@ const nextConfig = {
               "frame-ancestors 'none'", // equivalent to X-Frame-Options DENY
               "base-uri 'self'",
               "form-action 'self'",
+              "manifest-src 'self' https://docs.aotf.in",
             ].join("; "),
           },
         ],

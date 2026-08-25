@@ -87,9 +87,9 @@ const HeroDescription = () => {
       </div>
       <div className="flex-1 flex items-center justify-center">
         <img
-          src="./connect.png"
+          src="https://res.cloudinary.com/dzko1daqg/image/upload/v1786900681/ChatGPT_Image_Aug_16_2026_10_45_23_PM_lh0jzx.png"
           alt="hero"
-          className="h-auto w-auto transition-all duration-300 hover:scale-102 rounded-xl"
+          className="h-95 w-auto transition-all duration-300 hover:scale-102 rounded-xl"
         />
       </div>
     </section>
