@@ -7,6 +7,7 @@ import { Input } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
 import { addToast } from "@heroui/toast";
 import { BadgeCheck, MailPlus, Shield, UserPlus } from "lucide-react";
+import { reportClientError } from "@/lib/client-report-error";
 
 const ROLE_OPTIONS = [
   { key: "SUPER_ADMIN", label: "Super Admin (Founder only)" },
@@ -60,7 +61,8 @@ export default function AdminManagementPage() {
         color: "success",
       });
       setForm({ name: "", email: "", assignedRole: "CRM" });
-    } catch {
+    } catch (error) {
+      reportClientError(error, { feature: "admin-invite" });
       addToast({ description: "Failed to send invite", color: "danger" });
     } finally {
       setIsSubmitting(false);

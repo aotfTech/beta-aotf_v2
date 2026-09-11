@@ -741,6 +741,10 @@ const Page = () => {
   const [filterStatus, setFilterStatus] = useState<string>("");
   const [dateRange, setDateRange] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  useEffect(() => {
+    const initialSearch = new URLSearchParams(window.location.search).get("search");
+    if (initialSearch) setSearchQuery(initialSearch);
+  }, []);
   const [selectedDateChip, setSelectedDateChip] = useState<string>("");
   const [postToCancel, setPostToCancel] = useState<TuitionPost | null>(null);
   const [invoicePost, setInvoicePost] = useState<TuitionPost | null>(null);

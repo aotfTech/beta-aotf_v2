@@ -1,4 +1,5 @@
 import { clerkClient } from "@clerk/nextjs/server";
+import { reportError } from "@/lib/sentry-report";
 
 /**
  * Clerk Backend API Service
@@ -77,6 +78,9 @@ export async function createAdminUser(params: CreateAdminUserParams) {
         };
       }
     }
+    reportError(error, {
+      tags: { integration: "clerk", operation: "create-admin-user" },
+    });
     return {
       success: false,
       error: "Failed to create admin user in Clerk",
@@ -117,6 +121,10 @@ export async function updateAdminMetadata(params: UpdateAdminMetadataParams) {
     return { success: true };
   } catch (error) {
     console.error("[clerk-service] Error updating admin metadata:", error);
+    reportError(error, {
+      tags: { integration: "clerk", operation: "update-admin-metadata" },
+      extra: { clerkId },
+    });
     return {
       success: false,
       error: "Failed to update admin metadata",
@@ -149,6 +157,9 @@ export async function sendPasswordResetEmail(email: string) {
     };
   } catch (error) {
     console.error("[clerk-service] Error sending password reset:", error);
+    reportError(error, {
+      tags: { integration: "clerk", operation: "send-password-reset" },
+    });
     return {
       success: false,
       error: "Failed to initiate password reset",
@@ -166,6 +177,10 @@ export async function deleteAdminUser(clerkId: string) {
     return { success: true };
   } catch (error) {
     console.error("[clerk-service] Error deleting admin user:", error);
+    reportError(error, {
+      tags: { integration: "clerk", operation: "delete-admin-user" },
+      extra: { clerkId },
+    });
     return {
       success: false,
       error: "Failed to delete admin user",
@@ -195,6 +210,10 @@ export async function getAdminUser(clerkId: string) {
     };
   } catch (error) {
     console.error("[clerk-service] Error getting admin user:", error);
+    reportError(error, {
+      tags: { integration: "clerk", operation: "get-admin-user" },
+      extra: { clerkId },
+    });
     return {
       success: false,
       error: "Failed to get admin user",
@@ -235,6 +254,10 @@ export async function updateAdminUser(
     return { success: true };
   } catch (error) {
     console.error("[clerk-service] Error updating admin user:", error);
+    reportError(error, {
+      tags: { integration: "clerk", operation: "update-admin-user" },
+      extra: { clerkId },
+    });
     return {
       success: false,
       error: "Failed to update admin user",
@@ -261,6 +284,10 @@ export async function setAdminLockStatus(clerkId: string, isLocked: boolean) {
     return { success: true };
   } catch (error) {
     console.error("[clerk-service] Error setting admin lock status:", error);
+    reportError(error, {
+      tags: { integration: "clerk", operation: "set-admin-lock-status" },
+      extra: { clerkId, isLocked },
+    });
     return {
       success: false,
       error: "Failed to update admin lock status",

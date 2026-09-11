@@ -3,6 +3,7 @@ import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Avatar } from "@heroui/avatar";
 import { ScrollShadow } from "@heroui/scroll-shadow";
 import Underline from "./ui/Underline";
+import { reportError } from "@/lib/sentry-report";
 
 interface RenownedTeacher {
   _id: string;
@@ -22,7 +23,10 @@ async function fetchRenownedTeachers(): Promise<RenownedTeacher[]> {
     if (!res.ok) return [];
     const data = await res.json();
     return data.teachers ?? [];
-  } catch {
+  } catch (error) {
+    reportError(error, {
+      tags: { area: "public-content", operation: "load-renowned-teachers" },
+    });
     return [];
   }
 }

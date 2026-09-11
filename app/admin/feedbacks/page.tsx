@@ -78,6 +78,10 @@ export default function FeedbackPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  useEffect(() => {
+    const initialSearch = new URLSearchParams(window.location.search).get("search");
+    if (initialSearch) setSearchQuery(initialSearch);
+  }, []);
   const [filterStatus, setFilterStatus] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [selectedFeedback, setSelectedFeedback] = useState<FeedbackData | null>(

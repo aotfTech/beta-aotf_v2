@@ -15,6 +15,7 @@ import { FaLocationDot } from "react-icons/fa6";
 import { Badge } from "@heroui/badge";
 import { formatPhone } from "@/lib/utils/phone";
 import { formatDisplayMonthYear } from "@/lib/utils/display-date";
+import { reportClientError } from "@/lib/client-report-error";
 import {
   FaBook,
   FaChalkboardTeacher,
@@ -131,9 +132,10 @@ export default function ProfilePage() {
         setProfile(data.profile);
         setUserData(data.user);
       })
-      .catch((err) =>
-        setError(err instanceof Error ? err.message : "Something went wrong")
-      )
+      .catch((err) => {
+        reportClientError(err, { feature: "public-profile-load" });
+        setError(err instanceof Error ? err.message : "Something went wrong");
+      })
       .finally(() => setLoading(false));
   }, [username]);
 
@@ -265,6 +267,7 @@ export default function ProfilePage() {
         new RazorpayClass(options).open();
       });
     } catch (upgradeErr) {
+      reportClientError(upgradeErr, { feature: "profile-candidate-upgrade" });
       if (
         upgradeErr instanceof Error &&
         upgradeErr.message === "Payment cancelled"

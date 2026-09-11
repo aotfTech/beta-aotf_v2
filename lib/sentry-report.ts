@@ -8,6 +8,12 @@ export interface ReportErrorContext {
   extra?: Record<string, unknown>;
 }
 
+export interface BackgroundErrorContext {
+  operation: string;
+  integration?: string;
+  extra?: Record<string, unknown>;
+}
+
 /** Type guard for Zod errors (works across Zod v3 and v4) */
 function isZodError(
   err: unknown,
@@ -37,10 +43,20 @@ function isUserCancellation(error: unknown): boolean {
   return false;
 }
 
+function isNextControlFlowError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    (error as { digest?: unknown }).digest === "DYNAMIC_SERVER_USAGE"
+  );
+}
+
 /**
  * Returns false for expected operational errors (validation, 4xx, user cancel).
  */
 export function shouldReportToSentry(error: unknown): boolean {
+  if (isNextControlFlowError(error)) return false;
   if (isUserCancellation(error)) return false;
   if (isZodError(error)) return false;
   if (error instanceof SyntaxError) return false;
@@ -65,5 +81,20 @@ export function reportError(
       ...context?.extra,
       ...(context?.route ? { route: context.route } : {}),
     },
+  });
+}
+
+/** Report failures from work that continues after the request has returned. */
+export function reportBackgroundError(
+  error: unknown,
+  context: BackgroundErrorContext,
+): void {
+  reportError(error, {
+    tags: {
+      layer: "background",
+      operation: context.operation,
+      ...(context.integration ? { integration: context.integration } : {}),
+    },
+    extra: context.extra,
   });
 }

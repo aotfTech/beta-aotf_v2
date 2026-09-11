@@ -2,6 +2,7 @@ import { clerkClient } from "@clerk/nextjs/server";
 import User from "@/lib/models/User";
 import { isAppClerkUser } from "@/lib/migration/clerk-user-filters";
 import { seedClerkUserInMongo } from "@/lib/migration/seed-clerk-user";
+import { reportBackgroundError } from "@/lib/sentry-report";
 
 const PAGE_SIZE = 100;
 
@@ -57,6 +58,20 @@ export async function syncClerkAppUsers(): Promise<SyncClerkAppUsersResult> {
         error: err instanceof Error ? err.message : String(err),
       });
     }
+  }
+
+  if (failures.length > 0) {
+    reportBackgroundError(
+      new Error(`Failed to sync ${failures.length} Clerk app user(s)`),
+      {
+        operation: "sync-clerk-app-users",
+        integration: "clerk-mongodb",
+        extra: {
+          failedCount: failures.length,
+          failedUserIds: failures.map((failure) => failure.id),
+        },
+      },
+    );
   }
 
   return {

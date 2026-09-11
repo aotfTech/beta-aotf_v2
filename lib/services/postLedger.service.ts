@@ -15,6 +15,7 @@ import PostLedger, {
   type PaymentStatus,
 } from "@/lib/models/PostLedger";
 import { getGoogleSheetsClient, ensureTabExists } from "@/lib/googleSheets";
+import { reportBackgroundError } from "@/lib/sentry-report";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -271,6 +272,11 @@ export async function syncPostLedgerRowToSheet(ledger: IPostLedger): Promise<voi
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
     if (!spreadsheetId) {
       console.error("[syncPostLedgerRowToSheet] Missing env var: GOOGLE_SHEET_ID");
+      reportBackgroundError(new Error("Missing env var: GOOGLE_SHEET_ID"), {
+        operation: "sync-post-ledger-row",
+        integration: "google-sheets",
+        extra: { postId: ledger.postId, reason: "missing-spreadsheet-id" },
+      });
       return;
     }
 
@@ -285,6 +291,11 @@ export async function syncPostLedgerRowToSheet(ledger: IPostLedger): Promise<voi
     
     if (!rowIndex) {
       console.error("[syncPostLedgerRowToSheet] Missing serialNumber and sheetRowIndex for ledger:", ledger.postId);
+      reportBackgroundError(new Error("Post ledger has no sheet row index"), {
+        operation: "sync-post-ledger-row",
+        integration: "google-sheets",
+        extra: { postId: ledger.postId, reason: "missing-row-index" },
+      });
       return;
     }
 
@@ -311,6 +322,11 @@ export async function syncPostLedgerRowToSheet(ledger: IPostLedger): Promise<voi
       ledger.postId,
       err,
     );
+    reportBackgroundError(err, {
+      operation: "sync-post-ledger-row",
+      integration: "google-sheets",
+      extra: { postId: ledger.postId },
+    });
   }
 }
 
@@ -552,7 +568,11 @@ export async function upsertPostLedger(postId: string): Promise<IPostLedger> {
 
   // Fire-and-forget: keep the API response snappy.
   syncPostLedgerRowToSheet(upserted).catch((err) =>
-    console.error("[upsertPostLedger] Sheet sync failed:", err),
+    reportBackgroundError(err, {
+      operation: "sync-post-ledger-row",
+      integration: "google-sheets",
+      extra: { postId },
+    }),
   );
 
   return upserted;

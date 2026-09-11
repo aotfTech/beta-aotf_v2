@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import Admin from "@/lib/models/Admin";
 import { syncClerkAppUsers } from "@/lib/migration/sync-clerk-app-users";
+import { withApiErrorHandling } from "@/lib/api-utils";
 
 async function requireManageUsersAdmin(userId: string) {
   const { sessionClaims } = await auth();
@@ -41,7 +42,7 @@ async function requireManageUsersAdmin(userId: string) {
   return { admin: currentAdmin };
 }
 
-export async function POST() {
+async function post() {
   await dbConnect();
 
   const { userId } = await auth();
@@ -55,3 +56,5 @@ export async function POST() {
   const sync = await syncClerkAppUsers();
   return NextResponse.json({ ok: true, ...sync });
 }
+
+export const POST = withApiErrorHandling(post, "POST /api/admin/sync-clerk-users");

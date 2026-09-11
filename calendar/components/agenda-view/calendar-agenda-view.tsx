@@ -10,6 +10,7 @@ import {
 } from "date-fns";
 import { formatDisplayDate } from "@/lib/utils/display-date";
 import { CalendarX2 } from "lucide-react";
+import { reportClientError } from "@/lib/client-report-error";
 
 import { useCalendar } from "@/calendar/contexts/calendar-context";
 import { AgendaEventCard } from "@/calendar/components/agenda-view/agenda-event-card";
@@ -156,6 +157,7 @@ export function CalendarAgendaView({ singleDayEvents, multiDayEvents }: IProps) 
         },
       }));
     } catch (error) {
+      reportClientError(error, { feature: "admin-calendar-agenda" });
       setDayCache((prev) => ({
         ...prev,
         [key]: {

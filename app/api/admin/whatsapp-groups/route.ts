@@ -3,8 +3,9 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import WhatsAppGroupLink from "@/lib/models/WhatsAppGroupLink";
 import { requirePermission } from "@/lib/admin/requirePermission";
+import { withApiErrorHandling } from "@/lib/api-utils";
 
-export async function GET(req: Request) {
+async function get(req: Request) {
   try {
     const access = await requirePermission("whatsapp:manage")(req);
     if (access.error) return access.error;
@@ -24,7 +25,7 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
+async function post(req: Request) {
   try {
     const access = await requirePermission("whatsapp:manage")(req);
     if (access.error) return access.error;
@@ -66,3 +67,6 @@ export async function POST(req: Request) {
     );
   }
 }
+
+export const GET = withApiErrorHandling(get, "GET /api/admin/whatsapp-groups");
+export const POST = withApiErrorHandling(post, "POST /api/admin/whatsapp-groups");

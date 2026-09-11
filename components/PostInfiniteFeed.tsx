@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import TuitionPost from "@/components/PostCards/TuitionPost";
 import InlineAdCard from "@/components/InlineAdCard";
+import { reportClientError } from "@/lib/client-report-error";
 
 const PAGE_SIZE = 10;
 const EDITED_THRESHOLD_MS = 1000;
@@ -147,7 +148,8 @@ export default function PostInfiniteFeed({
             });
             setPagination(data.pagination);
           })
-          .catch(() => {
+          .catch((error) => {
+            reportClientError(error, { feature: "public-tuition-feed" });
             setErrorMessage("Could not load more posts right now.");
           })
           .finally(() => {

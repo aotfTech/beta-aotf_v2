@@ -6,13 +6,15 @@ import Admin from "@/lib/models/Admin";
 import User from "@/lib/models/User";
 import { logActivity } from "@/lib/admin/logActivity";
 import { syncUserMetadataToClerk } from "@/lib/services/clerk-sync.service";
+import { reportError } from "@/lib/sentry-report";
+import { withApiErrorHandling } from "@/lib/api-utils";
 
 /**
  * POST /api/admin/app-users/[userId]/recover-payment
  * Marks a user's payment as complete and reconciles all access flags.
  * Requires `canRecoverPayments` permission (or super_admin).
  */
-export async function POST(
+async function post(
   _req: Request,
   { params }: { params: Promise<{ userId: string }> },
 ) {
@@ -94,6 +96,10 @@ export async function POST(
     });
   } catch (logErr) {
     console.error("[recover-payment] Failed to write audit log:", logErr);
+    reportError(logErr, {
+      route: "POST /api/admin/app-users/[userId]/recover-payment",
+      tags: { operation: "write-audit-log" },
+    });
   }
 
   return NextResponse.json({
@@ -104,3 +110,8 @@ export async function POST(
     hasCandidateAccess: userDoc.hasCandidateAccess,
   });
 }
+
+export const POST = withApiErrorHandling(
+  async (...args: Parameters<typeof post>) => post(...args),
+  "POST /api/admin/app-users/[userId]/recover-payment",
+);

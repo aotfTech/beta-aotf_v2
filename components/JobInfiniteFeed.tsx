@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import JobPost from "@/components/PostCards/JobPost";
 import InlineAdCard from "@/components/InlineAdCard";
+import { reportClientError } from "@/lib/client-report-error";
 
 const PAGE_SIZE = 10;
 
@@ -140,7 +141,8 @@ export default function JobInfiniteFeed({
             });
             setPagination(data.pagination);
           })
-          .catch(() => {
+          .catch((error) => {
+            reportClientError(error, { feature: "public-job-feed" });
             setErrorMessage("Could not load more jobs right now.");
           })
           .finally(() => {

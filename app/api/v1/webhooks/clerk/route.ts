@@ -91,7 +91,12 @@ export async function POST(req: NextRequest) {
       provider: "clerk",
       event: eventType,
       entityId,
-    }).catch(() => {});
+    }).catch((cleanupError) => {
+      reportError(cleanupError, {
+        tags: { provider: "clerk", operation: "delete-failed-idempotency-record" },
+        extra: { eventType, entityId },
+      });
+    });
     return NextResponse.json(
       { error: "Webhook processing failed" },
       { status: 500 },

@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import dbConnect from "@/lib/db";
 import Admin from "@/lib/models/Admin";
 import AdminActivityLog from "@/lib/models/admin/AdminActivityLog";
+import Enquiry from "@/lib/models/Enquiry";
 import { handleApiError } from "@/lib/api-utils";
 
 export async function GET(req: Request) {
@@ -68,6 +70,12 @@ export async function GET(req: Request) {
   if (search) {
     const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const searchRegex = new RegExp(escapedSearch, "i");
+    const matchingEnquiries = await Enquiry.find({ enquiryId: searchRegex })
+      .select("_id")
+      .lean();
+    const matchingEnquiryIds = matchingEnquiries.map((enquiry) =>
+      String(enquiry._id),
+    );
     query.$or = [
       { adminName: searchRegex },
       { adminUsername: searchRegex },
@@ -78,6 +86,15 @@ export async function GET(req: Request) {
       { "metadata.invoiceId": searchRegex },
       { "metadata.action": searchRegex },
       { "metadata.notes": searchRegex },
+      ...(matchingEnquiryIds.length > 0
+        ? [
+            {
+              "metadata.enquiryId": mongoose.trusted({
+                $in: matchingEnquiryIds,
+              }),
+            },
+          ]
+        : []),
     ];
   }
 
@@ -91,8 +108,47 @@ export async function GET(req: Request) {
       
     const total = await AdminActivityLog.countDocuments(query);
 
+    // Older activity records stored the Mongo ObjectId in metadata.enquiryId.
+    // Resolve those values before sending logs to the UI so admins see the
+    // human-readable enquiry reference instead (for example E-060926-001).
+    const enquiryObjectIds = logs
+      .flatMap((log: any) => [
+        log.metadata?.enquiryId,
+        log.targetType === "Enquiry" ? log.targetId : undefined,
+      ])
+      .filter(
+        (value: unknown): value is string =>
+          typeof value === "string" && mongoose.Types.ObjectId.isValid(value),
+      )
+      .map((value) => new mongoose.Types.ObjectId(value));
+    const enquiryRefs = new Map<string, string>();
+
+    if (enquiryObjectIds.length > 0) {
+      const enquiries = await Enquiry.find({
+        _id: mongoose.trusted({ $in: enquiryObjectIds }),
+      })
+        .select("_id enquiryId")
+        .lean();
+      for (const enquiry of enquiries) {
+        enquiryRefs.set(String(enquiry._id), enquiry.enquiryId);
+      }
+    }
+
+    const enrichedLogs = logs.map((log: any) => {
+      const rawEnquiryId =
+        log.metadata?.enquiryId ??
+        (log.targetType === "Enquiry" ? log.targetId : undefined);
+      const enquiryRef =
+        typeof rawEnquiryId === "string"
+          ? enquiryRefs.get(rawEnquiryId)
+          : undefined;
+      return enquiryRef
+        ? { ...log, metadata: { ...log.metadata, enquiryId: enquiryRef } }
+        : log;
+    });
+
     return NextResponse.json({ 
-      logs,
+      logs: enrichedLogs,
       pagination: {
         total,
         page,

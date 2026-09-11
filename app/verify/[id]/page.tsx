@@ -26,6 +26,7 @@ import {
 import { FaChalkboardTeacher } from "react-icons/fa";
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
+import { reportClientError } from "@/lib/client-report-error";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -161,8 +162,9 @@ export default function VerifyPage() {
             setState({ kind: "not_found" });
           }
         }
-      } catch {
+      } catch (error) {
         // API unavailable — fall through to sample data
+        reportClientError(error, { feature: "credential-verification-lookup" });
       }
     }
 

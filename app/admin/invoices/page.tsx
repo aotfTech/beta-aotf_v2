@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
 import { shareOnWhatsApp } from "@/lib/utils/share";
+import { reportClientError } from "@/lib/client-report-error";
 
 interface PartialPayment {
   amountPaid: number;
@@ -435,7 +436,8 @@ function StatusModal({
           color: "danger",
         });
       }
-    } catch {
+    } catch (error) {
+      reportClientError(error, { feature: "admin-invoices-status" });
       addToast({ description: "Network error", color: "danger" });
     } finally {
       setSaving(false);
@@ -601,6 +603,15 @@ export default function InvoicesPage() {
   const [shareInvoiceId, setShareInvoiceId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Allow admin links such as /admin/invoices?search=INV-123 to open with
+  // the requested invoice filter already applied.
+  useEffect(() => {
+    const initialSearch = new URLSearchParams(window.location.search).get(
+      "search",
+    );
+    if (initialSearch) setSearch(initialSearch);
+  }, []);
+
   // Debounce search
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 400);
@@ -625,7 +636,8 @@ export default function InvoicesPage() {
         } else {
           addToast({ description: "Failed to load invoices", color: "danger" });
         }
-      } catch {
+      } catch (error) {
+        reportClientError(error, { feature: "admin-invoices-list" });
         addToast({ description: "Network error", color: "danger" });
       } finally {
         setLoading(false);
@@ -655,7 +667,8 @@ export default function InvoicesPage() {
           color: "danger",
         });
       }
-    } catch {
+    } catch (error) {
+      reportClientError(error, { feature: "admin-invoices-delete" });
       addToast({ description: "Network error", color: "danger" });
     }
   };

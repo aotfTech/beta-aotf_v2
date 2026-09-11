@@ -5,10 +5,12 @@ import dbConnect from "@/lib/db";
 import Admin from "@/lib/models/Admin";
 import User from "@/lib/models/User";
 import { logActivity } from "@/lib/admin/logActivity";
+import { reportError } from "@/lib/sentry-report";
+import { withApiErrorHandling } from "@/lib/api-utils";
 
 const allowedStatuses = new Set(["active", "blocked", "deleted"]);
 
-export async function PATCH(
+async function patch(
   req: Request,
   { params }: { params: Promise<{ userId: string }> },
 ) {
@@ -79,8 +81,12 @@ export async function PATCH(
         accountStatus: body.status,
       },
     });
-  } catch {
+  } catch (err) {
     // Non-fatal: DB status is the source of truth.
+    reportError(err, {
+      route: "PATCH /api/admin/app-users/[userId]/status",
+      tags: { integration: "clerk", operation: "sync-account-status" },
+    });
   }
 
   try {
@@ -106,3 +112,8 @@ export async function PATCH(
     },
   });
 }
+
+export const PATCH = withApiErrorHandling(
+  patch,
+  "PATCH /api/admin/app-users/[userId]/status",
+);

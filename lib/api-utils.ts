@@ -19,6 +19,21 @@ export interface HandleApiErrorOptions {
   legacyAdminShape?: boolean;
 }
 
+/** Wrap a route handler with the shared unexpected-error reporter/response. */
+export function withApiErrorHandling<TArgs extends unknown[]>(
+  handler: (...args: TArgs) => Promise<Response>,
+  context: string,
+  options?: HandleApiErrorOptions,
+): (...args: TArgs) => Promise<Response> {
+  return async (...args) => {
+    try {
+      return await handler(...args);
+    } catch (error) {
+      return handleApiError(error, context, options);
+    }
+  };
+}
+
 // ─── CSRF Origin Check ──────────────────────────────────────────────────
 
 /**

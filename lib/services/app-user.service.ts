@@ -2,6 +2,7 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { makeClerkUsername, splitFullName } from "@/lib/utils/clerk-username";
 import { seedClerkUserInMongo } from "@/lib/migration/seed-clerk-user";
 import User from "@/lib/models/User";
+import { reportError } from "@/lib/sentry-report";
 
 export type AdminCreateAppUserRole = "teacher" | "candidate";
 
@@ -137,6 +138,10 @@ export async function createAppUser(
       break;
     } catch (error) {
       if (!isUsernameConflict(error) || attempt === 9) {
+        reportError(error, {
+          tags: { area: "app-user-service", operation: "create-clerk-user" },
+          extra: { attempt, role: input.role },
+        });
         const message =
           (
             error as {

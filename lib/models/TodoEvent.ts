@@ -5,6 +5,7 @@ import {
   mapTodo,
   todoEventKey,
 } from "@/lib/services/calendar-event.service";
+import { reportBackgroundError } from "@/lib/sentry-report";
 
 // ─── Category + status enums ─────────────────────────────────────────────
 
@@ -108,19 +109,25 @@ TodoEventSchema.index({ handledByAdminId: 1, dueAt: 1 });
 // ─── Calendar write-through hooks ──────────────────────────────────────────
 
 TodoEventSchema.post("save", function (doc) {
-  void upsertCalendarEvent(mapTodo(doc.toObject()));
+  void upsertCalendarEvent(mapTodo(doc.toObject())).catch((err) =>
+    reportBackgroundError(err, { operation: "upsert-todo-calendar", integration: "calendar" }),
+  );
 });
 
 TodoEventSchema.post("findOneAndUpdate", function (doc) {
   if (!doc) return;
   const raw = typeof doc.toObject === "function" ? doc.toObject() : (doc as unknown as Record<string, any>);
-  void upsertCalendarEvent(mapTodo(raw));
+  void upsertCalendarEvent(mapTodo(raw)).catch((err) =>
+    reportBackgroundError(err, { operation: "upsert-todo-calendar", integration: "calendar" }),
+  );
 });
 
 TodoEventSchema.post("findOneAndDelete", function (doc) {
   if (!doc) return;
   const raw = typeof doc.toObject === "function" ? doc.toObject() : (doc as unknown as Record<string, any>);
-  void deleteCalendarEvent(todoEventKey(raw._id?.toString?.() ?? ""));
+  void deleteCalendarEvent(todoEventKey(raw._id?.toString?.() ?? "")).catch((err) =>
+    reportBackgroundError(err, { operation: "delete-todo-calendar", integration: "calendar" }),
+  );
 });
 
 const TodoEvent: Model<ITodoEvent> =

@@ -13,6 +13,7 @@ import User from "@/lib/models/User";
 import Profile from "@/lib/models/Profile";
 import OnboardingDetails from "@/lib/models/OnboardingDetails";
 import { ConflictError, NotFoundError } from "@/lib/errors";
+import { reportBackgroundError } from "@/lib/sentry-report";
 import { ensureUserRecord } from "@/lib/utils/ensure-user";
 import {
   bulkUpsertCalendarEvents,
@@ -1004,6 +1005,11 @@ export async function updateApplicationStatus(
         "[applicationService] calendar bulk-upsert after auto-decline failed:",
         err,
       );
+      reportBackgroundError(err, {
+        operation: "sync-auto-declined-applications",
+        integration: "calendar",
+        extra: { applicationId: String(application._id) },
+      });
     }
   }
 
@@ -1065,6 +1071,11 @@ export async function updateApplicationStatus(
         "[applicationService] calendar bulk-upsert after revert failed:",
         err,
       );
+      reportBackgroundError(err, {
+        operation: "sync-reverted-applications",
+        integration: "calendar",
+        extra: { applicationId: String(application._id) },
+      });
     }
   }
 

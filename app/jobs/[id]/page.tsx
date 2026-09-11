@@ -22,6 +22,7 @@ import ApplyActionButton from "@/components/ApplyActionButton";
 import BackButton from "@/components/BackButton";
 import { getJobByJobId } from "@/lib/services/job.service";
 import { notFound } from "next/navigation";
+import { reportError } from "@/lib/sentry-report";
 
 /* ─── Helpers ─────────────────────────────────────────────────── */
 
@@ -131,7 +132,12 @@ export default async function JobDetailPage({
   let job;
   try {
     job = await getJobByJobId(id);
-  } catch {
+  } catch (error) {
+    reportError(error, {
+      route: "GET /jobs/[id]",
+      tags: { feature: "public-job-detail" },
+      extra: { jobId: id },
+    });
     notFound();
   }
 

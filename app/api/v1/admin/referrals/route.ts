@@ -3,6 +3,7 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import dbConnect from "@/lib/db";
 import Admin from "@/lib/models/Admin";
 import Referral from "@/lib/models/Referral";
+import { withApiErrorHandling } from "@/lib/api-utils";
 
 async function requireAdmin(userId: string) {
   const { sessionClaims } = await auth();
@@ -29,7 +30,7 @@ async function requireAdmin(userId: string) {
   return Boolean(admin);
 }
 
-export async function GET() {
+async function get() {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -67,3 +68,5 @@ export async function GET() {
 
   return NextResponse.json({ referrals: options });
 }
+
+export const GET = withApiErrorHandling(get, "GET /api/v1/admin/referrals");

@@ -7,4 +7,9 @@
 	inset-inline-start: calc(var(--spacing) * -4);
 }
 
-@config "../tailwind.config.js"
+@config "../tailwind.config.js";
+
+:root {
+	--font-sans: "Segoe UI", Arial, sans-serif;
+	--font-mono: "Cascadia Code", "Courier New", monospace;
+}

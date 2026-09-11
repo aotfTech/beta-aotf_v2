@@ -5,6 +5,7 @@ import Admin from "@/lib/models/Admin";
 import AdminRole from "@/lib/models/admin/AdminRole";
 import { ADMIN_PERMISSION_KEYS } from "@/lib/admin/admin-permissions";
 import { logActivity } from "@/lib/admin/logActivity";
+import { withApiErrorHandling } from "@/lib/api-utils";
 
 const SYSTEM_ROLES = ["super_admin", "admin", "support_admin"] as const;
 
@@ -46,7 +47,7 @@ async function ensureSystemRoles() {
   await AdminRole.insertMany(insert, { ordered: false });
 }
 
-export async function GET(req: Request) {
+async function get(req: Request) {
   await dbConnect();
   const { userId, sessionClaims } = await auth();
 
@@ -80,7 +81,7 @@ export async function GET(req: Request) {
   return NextResponse.json({ roles });
 }
 
-export async function POST(req: Request) {
+async function post(req: Request) {
   await dbConnect();
   const { userId, sessionClaims } = await auth();
 
@@ -165,3 +166,6 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ role }, { status: 201 });
 }
+
+export const GET = withApiErrorHandling(get, "GET /api/v1/admin/roles");
+export const POST = withApiErrorHandling(post, "POST /api/v1/admin/roles");

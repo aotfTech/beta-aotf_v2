@@ -9,8 +9,9 @@ import { requirePermission } from "@/lib/admin/requirePermission";
 import AdminInvite from "@/lib/models/admin/AdminInvite";
 import AdminUser from "@/lib/models/admin/AdminUser";
 import Admin from "@/lib/models/Admin";
+import { withApiErrorHandling } from "@/lib/api-utils";
 
-export async function POST(
+async function post(
   req: Request,
   { params }: { params: Promise<{ adminUserId: string }> },
 ) {
@@ -101,3 +102,8 @@ export async function POST(
 
   return NextResponse.json({ success: true });
 }
+
+export const POST = withApiErrorHandling(
+  post,
+  "POST /api/admin/users/[adminUserId]/terminate",
+);

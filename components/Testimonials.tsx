@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Underline from "./ui/Underline";
+import { reportClientError } from "@/lib/client-report-error";
 
 type TestimonialsProps = {
   title: string;
@@ -60,7 +61,9 @@ const Testimonials = ({
         }));
 
         if (!cancelled) setCardsData(mapped);
-      } catch {}
+      } catch (error) {
+        reportClientError(error, { feature: "public-testimonials" });
+      }
     })();
 
     return () => {

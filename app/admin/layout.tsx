@@ -3,6 +3,8 @@ import AdminFab from "@/components/admin/ui/AdminFab";
 import AdminSidebar from "@/components/admin/ui/AdminSidebar";
 import { getEvents, getUsers } from "@/calendar/requests";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminLayout({
   children,
 }: {

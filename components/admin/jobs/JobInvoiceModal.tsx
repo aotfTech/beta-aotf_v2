@@ -7,6 +7,7 @@ import { Select, SelectItem } from "@heroui/select";
 import { addToast } from "@heroui/toast";
 import { FaRupeeSign } from "react-icons/fa";
 import type { JobPost } from "@/components/admin/postcards/JobPostCard";
+import { reportClientError } from "@/lib/client-report-error";
 
 interface InvoiceRecord {
   invoiceId: string;
@@ -109,6 +110,7 @@ export default function JobInvoiceModal({
         data.invoice?.invoiceId ?? data.invoiceId ?? existing?.invoiceId ?? "",
       );
     } catch (error) {
+      reportClientError(error, { feature: "admin-job-invoice" });
       addToast({
         description:
           error instanceof Error ? error.message : "Failed to save invoice",

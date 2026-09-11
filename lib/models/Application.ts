@@ -4,6 +4,7 @@ import {
   deleteCalendarEvent,
   mapApplication,
 } from "@/lib/services/calendar-event.service";
+import { reportBackgroundError } from "@/lib/sentry-report";
 
 // ─── Enums ──────────────────────────────────────────────────────────────
 
@@ -223,7 +224,11 @@ ApplicationSchema.index({ appliedAt: -1 });
 
 ApplicationSchema.post("save", function (doc) {
   const input = mapApplication(doc.toObject());
-  if (input) void upsertCalendarEvent(input);
+  if (input) {
+    void upsertCalendarEvent(input).catch((err) =>
+      reportBackgroundError(err, { operation: "upsert-application-calendar", integration: "calendar" }),
+    );
+  }
 });
 
 ApplicationSchema.post("findOneAndUpdate", function (doc) {
@@ -233,7 +238,11 @@ ApplicationSchema.post("findOneAndUpdate", function (doc) {
       ? doc.toObject()
       : (doc as unknown as Record<string, any>),
   );
-  if (input) void upsertCalendarEvent(input);
+  if (input) {
+    void upsertCalendarEvent(input).catch((err) =>
+      reportBackgroundError(err, { operation: "upsert-application-calendar", integration: "calendar" }),
+    );
+  }
 });
 
 ApplicationSchema.post("findOneAndDelete", function (doc) {
@@ -245,9 +254,13 @@ ApplicationSchema.post("findOneAndDelete", function (doc) {
   const id = raw._id?.toString?.() ?? "";
   const isTuition = typeof raw.postId === "string" && raw.postId;
   if (isTuition) {
-    void deleteCalendarEvent(`application:${id}:tuition`);
+    void deleteCalendarEvent(`application:${id}:tuition`).catch((err) =>
+      reportBackgroundError(err, { operation: "delete-application-calendar", integration: "calendar" }),
+    );
   } else if (typeof raw.jobIdPublic === "string" && raw.jobIdPublic) {
-    void deleteCalendarEvent(`application:${id}:job`);
+    void deleteCalendarEvent(`application:${id}:job`).catch((err) =>
+      reportBackgroundError(err, { operation: "delete-application-calendar", integration: "calendar" }),
+    );
   }
 });
 

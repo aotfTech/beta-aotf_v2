@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import AdminActivityLog, {
   type IAdminActivityLog,
 } from "@/lib/models/admin/AdminActivityLog";
+import { reportBackgroundError } from "@/lib/sentry-report";
 
 interface LogActivityParams {
   // Admin doc from Admin.findOne() - the primary model across all routes
@@ -91,6 +92,10 @@ export async function logActivity(params: LogActivityParams): Promise<void> {
     });
   } catch (error) {
     console.error("[logActivity] Failed to write admin activity log:", error);
+    reportBackgroundError(error, {
+      operation: "write-admin-activity-log",
+      extra: { action: params.action, module: params.module },
+    });
   }
 }
 

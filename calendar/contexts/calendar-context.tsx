@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import type { Dispatch, SetStateAction } from "react";
 import type { IEvent, IUser } from "@/calendar/interfaces";
 import type { TBadgeVariant, TVisibleHours, TWorkingHours } from "@/calendar/types";
+import { reportClientError } from "@/lib/client-report-error";
 
 interface ICalendarContext {
   selectedDate: Date;
@@ -64,6 +65,7 @@ export function CalendarProvider({
       if (data.events) setLocalEvents(data.events);
     } catch (err) {
       console.error("[CalendarProvider] refreshEvents failed:", err);
+      reportClientError(err, { feature: "admin-calendar-refresh" });
     } finally {
       setIsRefreshing(false);
     }

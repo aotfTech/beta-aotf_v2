@@ -16,6 +16,7 @@ import {
 import { Select, SelectItem } from "@heroui/select";
 import { Spinner } from "@heroui/spinner";
 import { addToast } from "@heroui/toast";
+import { reportClientError } from "@/lib/client-report-error";
 import { Star, Plus, EyeOff, Eye, Trash2, Pencil } from "lucide-react";
 
 type AdminReview = {
@@ -91,6 +92,7 @@ export default function AdminReviewsPage() {
       const data = (await res.json()) as { reviews: AdminReview[] };
       setItems(data.reviews ?? []);
     } catch (e) {
+      reportClientError(e, { feature: "admin-reviews" });
       setError(e instanceof Error ? e.message : "Failed to fetch reviews");
     } finally {
       setIsLoading(false);
@@ -171,6 +173,7 @@ export default function AdminReviewsPage() {
       onClose();
       fetchReviews();
     } catch (e) {
+      reportClientError(e, { feature: "admin-reviews" });
       addToast({
         description: e instanceof Error ? e.message : "Failed to save review",
         color: "danger",
@@ -190,6 +193,7 @@ export default function AdminReviewsPage() {
       addToast({ description: "Review deleted", color: "success" });
       fetchReviews();
     } catch (e) {
+      reportClientError(e, { feature: "admin-reviews" });
       addToast({
         description: e instanceof Error ? e.message : "Failed to delete review",
         color: "danger",

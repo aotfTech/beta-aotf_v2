@@ -9,6 +9,7 @@ import ApplyActionButton from "@/components/ApplyActionButton";
 import BackButton from "@/components/BackButton";
 import { getPostByPostId } from "@/lib/services/post.service";
 import { notFound } from "next/navigation";
+import { reportError } from "@/lib/sentry-report";
 
 const EDITED_THRESHOLD_MS = 1000;
 
@@ -78,7 +79,12 @@ export default async function PostDetailPage({
   let post;
   try {
     post = await getPostByPostId(postId);
-  } catch {
+  } catch (error) {
+    reportError(error, {
+      route: "GET /posts/[id]",
+      tags: { feature: "public-tuition-detail" },
+      extra: { postId },
+    });
     notFound();
   }
 

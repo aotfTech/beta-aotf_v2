@@ -8,6 +8,7 @@ import * as emailService from "./email.service";
 import mongoose from "mongoose";
 import AdminRole from "@/lib/models/admin/AdminRole";
 import { ADMIN_PERMISSION_KEYS } from "@/lib/admin/admin-permissions";
+import { reportError } from "@/lib/sentry-report";
 
 /**
  * Generate a secure random password
@@ -40,6 +41,10 @@ async function logAction(params: {
     await AuditLog.create(params);
   } catch (error) {
     console.error("[admin-service] Error logging action:", error);
+    reportError(error, {
+      tags: { area: "admin-service", operation: "write-audit-log" },
+      extra: { action: params.action, targetType: params.targetType },
+    });
   }
 }
 
@@ -143,6 +148,9 @@ export async function createAdmin(params: {
     });
   } catch (err) {
     console.error("[createAdmin] Failed to sync admin metadata to Clerk:", err);
+    reportError(err, {
+      tags: { area: "admin-service", operation: "create-admin-clerk-sync" },
+    });
   }
 
   // Log action
@@ -304,6 +312,9 @@ export async function updateAdminPermissions(params: {
       "[updateAdminPermissions] Failed to sync permissions to Clerk:",
       err,
     );
+    reportError(err, {
+      tags: { area: "admin-service", operation: "update-admin-permissions-clerk-sync" },
+    });
   }
 
   // Log action
@@ -373,6 +384,9 @@ export async function toggleAdminStatus(params: {
       "[toggleAdminStatus] Failed to update Clerk for admin status change:",
       err,
     );
+    reportError(err, {
+      tags: { area: "admin-service", operation: "toggle-admin-status-clerk-sync" },
+    });
   }
 
   // Log action
@@ -450,6 +464,9 @@ export async function terminateAdmin(params: {
     }
   } catch (err) {
     console.error("[terminateAdmin] Failed to remove admin from Clerk:", err);
+    reportError(err, {
+      tags: { area: "admin-service", operation: "terminate-admin-clerk-sync" },
+    });
   }
 
   // Log action

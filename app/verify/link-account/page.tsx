@@ -5,6 +5,7 @@ import Link from "next/link";
 import { RedirectToSignIn, useUser } from "@clerk/nextjs";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
+import { reportClientError } from "@/lib/client-report-error";
 
 type ClerkLikeError = {
   errors?: Array<{ message?: string }>;
@@ -61,6 +62,7 @@ export default function LinkAccountPage() {
       });
       setSuccess(true);
     } catch (err: unknown) {
+      reportClientError(err, { feature: "link-account-password-update" });
       setError(getClerkErrorMessage(err));
     } finally {
       setLoading(false);

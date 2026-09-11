@@ -20,6 +20,7 @@ import type {
   ICalendarEventSource,
 } from "@/lib/models/CalendarEvent";
 import type { TEventColor } from "@/calendar/types";
+import { reportBackgroundError } from "@/lib/sentry-report";
 
 // ─── Sync version ─────────────────────────────────────────────────────────────
 
@@ -449,6 +450,11 @@ export async function upsertCalendarEvent(
       `[CalendarEventService] upsert failed for key="${input.eventKey}":`,
       err,
     );
+    reportBackgroundError(err, {
+      operation: "upsert-calendar-event",
+      integration: "calendar",
+      extra: { eventKey: input.eventKey },
+    });
   }
 }
 
@@ -465,6 +471,11 @@ export async function deleteCalendarEvent(eventKey: string): Promise<void> {
       `[CalendarEventService] delete failed for key="${eventKey}":`,
       err,
     );
+    reportBackgroundError(err, {
+      operation: "delete-calendar-event",
+      integration: "calendar",
+      extra: { eventKey },
+    });
   }
 }
 

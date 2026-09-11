@@ -25,6 +25,7 @@ import {
 } from "@heroui/modal";
 import { addToast } from "@heroui/toast";
 import { Plus } from "lucide-react";
+import { reportClientError } from "@/lib/client-report-error";
 import { motion } from "motion/react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -119,6 +120,7 @@ export default function AdminFab() {
       setNewUser({ name: "", email: "", role: "teacher" });
       closeUser();
     } catch (err) {
+      reportClientError(err, { feature: "admin-create-user-fab" });
       addToast({
         description:
           err instanceof Error ? err.message : "Failed to create user",

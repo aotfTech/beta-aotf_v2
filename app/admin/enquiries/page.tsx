@@ -35,6 +35,10 @@ export default function EnquiriesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  useEffect(() => {
+    const initialSearch = new URLSearchParams(window.location.search).get("search");
+    if (initialSearch) setSearchQuery(initialSearch);
+  }, []);
   const [filterStatus, setFilterStatus] = useState("");
   const [selectedDateChip, setSelectedDateChip] = useState("");
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -78,6 +82,7 @@ export default function EnquiriesPage() {
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
       return (
+        enq.enquiryId?.toLowerCase().includes(q) ||
         enq.name?.toLowerCase().includes(q) ||
         enq.phoneNumber?.includes(q) ||
         enq.query?.toLowerCase().includes(q)

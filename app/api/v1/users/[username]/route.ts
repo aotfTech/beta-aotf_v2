@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import Profile from "@/lib/models/Profile";
 import User from "@/lib/models/User";
+import { withApiErrorHandling } from "@/lib/api-utils";
 
 /**
  * GET /api/v1/users/:username — public profile lookup.
  * Returns the merged User + Profile data for the given username.
  */
-export async function GET(
+async function get(
   _req: Request,
   { params }: { params: Promise<{ username: string }> },
 ) {
@@ -65,3 +66,5 @@ export async function GET(
     },
   });
 }
+
+export const GET = withApiErrorHandling(get, "GET /api/v1/users/[username]");

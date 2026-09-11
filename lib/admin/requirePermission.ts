@@ -6,6 +6,7 @@ import AdminUser from "@/lib/models/admin/AdminUser";
 import Admin from "@/lib/models/Admin";
 import type { Permission } from "@/lib/admin/permissions";
 import type { IAdminUser } from "@/lib/models/admin/AdminUser";
+import { reportError } from "@/lib/sentry-report";
 
 type PermissionResult = {
   admin: IAdminUser | null;
@@ -37,8 +38,11 @@ export function requirePermission(...required: Permission[]) {
           const clerkUser = await client.users.getUser(userId);
           metadata = clerkUser.publicMetadata as Record<string, unknown>;
         }
-      } catch {
+      } catch (error) {
         // The database permission check below remains authoritative.
+        reportError(error, {
+          tags: { area: "admin-permissions", operation: "clerk-permission-enrichment" },
+        });
       }
 
       const hasPermission =

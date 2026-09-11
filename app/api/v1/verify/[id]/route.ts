@@ -4,6 +4,7 @@ import dbConnect from "@/lib/db";
 import Profile from "@/lib/models/Profile";
 import User from "@/lib/models/User";
 import { formatDisplayDate } from "@/lib/utils/display-date";
+import { withApiErrorHandling } from "@/lib/api-utils";
 
 type Role = "teacher" | "candidate";
 
@@ -55,7 +56,7 @@ function formatMaskedPhone(phone: string | null): string {
 
 // ─── GET /api/v1/verify/[id] ─────────────────────────────────────────────────
 
-export async function GET(
+async function get(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
@@ -163,3 +164,5 @@ export async function GET(
     person,
   });
 }
+
+export const GET = withApiErrorHandling(get, "GET /api/v1/verify/[id]");

@@ -3,8 +3,9 @@ import { auth } from "@clerk/nextjs/server";
 import dbConnect from "@/lib/db";
 import TodoEvent from "@/lib/models/TodoEvent";
 import Admin from "@/lib/models/Admin";
+import { withApiErrorHandling } from "@/lib/api-utils";
 
-export async function POST(req: Request) {
+async function post(req: Request) {
   try {
     await dbConnect();
     
@@ -36,3 +37,5 @@ export async function POST(req: Request) {
     );
   }
 }
+
+export const POST = withApiErrorHandling(post, "POST /api/admin/todos");

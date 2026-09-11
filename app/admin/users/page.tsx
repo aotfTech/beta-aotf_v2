@@ -202,6 +202,10 @@ export default function UsersPage() {
   const [actioningId, setActioningId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  useEffect(() => {
+    const initialSearch = new URLSearchParams(window.location.search).get("search");
+    if (initialSearch) setSearchQuery(initialSearch);
+  }, []);
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [pageByRole, setPageByRole] = useState<Record<Role, number>>({
     teacher: 1,

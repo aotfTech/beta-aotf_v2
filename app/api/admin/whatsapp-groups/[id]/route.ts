@@ -3,8 +3,9 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import WhatsAppGroupLink from "@/lib/models/WhatsAppGroupLink";
 import { requirePermission } from "@/lib/admin/requirePermission";
+import { withApiErrorHandling } from "@/lib/api-utils";
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+async function patch(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const access = await requirePermission("whatsapp:manage")(req);
     if (access.error) return access.error;
@@ -41,7 +42,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 }
 
-export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+async function del(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const access = await requirePermission("whatsapp:manage")(req);
     if (access.error) return access.error;
@@ -61,3 +62,6 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     return NextResponse.json({ error: "Failed to delete WhatsApp group" }, { status: 500 });
   }
 }
+
+export const PATCH = withApiErrorHandling(patch, "PATCH /api/admin/whatsapp-groups/[id]");
+export const DELETE = withApiErrorHandling(del, "DELETE /api/admin/whatsapp-groups/[id]");

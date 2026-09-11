@@ -3,6 +3,7 @@
 import { SignIn, useClerk, useUser } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { reportClientError } from "@/lib/client-report-error";
 
 function AdminLoginContent() {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -33,6 +34,7 @@ function AdminLoginContent() {
           "[admin-login] Failed to sign out current user:",
           signOutError,
         );
+        reportClientError(signOutError, { feature: "admin-login-signout" });
       }
 
       if (!cancelled) {
@@ -73,6 +75,7 @@ function AdminLoginContent() {
         await redirectWithError("forbidden");
       } catch (error) {
         console.error("[admin-login] Failed to verify admin status:", error);
+        reportClientError(error, { feature: "admin-login-verification" });
         await redirectWithError("forbidden");
       }
     };

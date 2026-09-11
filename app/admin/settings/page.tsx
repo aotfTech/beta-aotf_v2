@@ -300,6 +300,10 @@ function AdminAccountsSection() {
   const [admins, setAdmins] = useState<AdminAccount[]>([]);
   const [isLoadingAdmins, setIsLoadingAdmins] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  useEffect(() => {
+    const initialSearch = new URLSearchParams(window.location.search).get("search");
+    if (initialSearch) setSearchTerm(initialSearch);
+  }, []);
 
   useEffect(() => {
     let mounted = true;

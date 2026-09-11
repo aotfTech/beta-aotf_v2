@@ -5,6 +5,7 @@ import {
   mapEnquiry,
   enquiryEventKey,
 } from "@/lib/services/calendar-event.service";
+import { reportBackgroundError } from "@/lib/sentry-report";
 
 export const ENQUIRY_STATUSES = [
   "new",
@@ -71,19 +72,25 @@ EnquirySchema.index(
 // ─── Calendar write-through hooks ──────────────────────────────────────────
 
 EnquirySchema.post("save", function (doc) {
-  void upsertCalendarEvent(mapEnquiry(doc.toObject()));
+  void upsertCalendarEvent(mapEnquiry(doc.toObject())).catch((err) =>
+    reportBackgroundError(err, { operation: "upsert-enquiry-calendar", integration: "calendar" }),
+  );
 });
 
 EnquirySchema.post("findOneAndUpdate", function (doc) {
   if (!doc) return;
   const raw = typeof doc.toObject === "function" ? doc.toObject() : (doc as unknown as Record<string, any>);
-  void upsertCalendarEvent(mapEnquiry(raw));
+  void upsertCalendarEvent(mapEnquiry(raw)).catch((err) =>
+    reportBackgroundError(err, { operation: "upsert-enquiry-calendar", integration: "calendar" }),
+  );
 });
 
 EnquirySchema.post("findOneAndDelete", function (doc) {
   if (!doc) return;
   const raw = typeof doc.toObject === "function" ? doc.toObject() : (doc as unknown as Record<string, any>);
-  void deleteCalendarEvent(enquiryEventKey(raw._id?.toString?.() ?? ""));
+  void deleteCalendarEvent(enquiryEventKey(raw._id?.toString?.() ?? "")).catch((err) =>
+    reportBackgroundError(err, { operation: "delete-enquiry-calendar", integration: "calendar" }),
+  );
 });
 
 // ─── Google Sheets write-through hooks ───────────────────────────────────────
@@ -92,7 +99,11 @@ EnquirySchema.post("save", function (doc) {
   void import("@/lib/services/enquiryLedger.service").then(
     ({ upsertEnquiryLedger }) =>
       upsertEnquiryLedger(doc.enquiryId).catch((err) =>
-        console.error("[Enquiry hook] Sheet sync failed:", err),
+        reportBackgroundError(err, {
+          operation: "upsert-enquiry-ledger",
+          integration: "google-sheets",
+          extra: { enquiryId: doc.enquiryId },
+        }),
       ),
   );
 });
@@ -104,7 +115,11 @@ EnquirySchema.post("findOneAndUpdate", function (doc) {
   void import("@/lib/services/enquiryLedger.service").then(
     ({ upsertEnquiryLedger }) =>
       upsertEnquiryLedger(raw.enquiryId as string).catch((err) =>
-        console.error("[Enquiry hook] Sheet sync failed:", err),
+        reportBackgroundError(err, {
+          operation: "upsert-enquiry-ledger",
+          integration: "google-sheets",
+          extra: { enquiryId: raw.enquiryId },
+        }),
       ),
   );
 });

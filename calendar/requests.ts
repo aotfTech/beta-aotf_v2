@@ -14,6 +14,7 @@ import Enquiry from "@/lib/models/Enquiry";
 import Feedback from "@/lib/models/Feedback";
 import TodoEvent from "@/lib/models/TodoEvent";
 import Admin from "@/lib/models/Admin";
+import { reportError } from "@/lib/sentry-report";
 
 // ─── Status maps ──────────────────────────────────────────────────────────
 
@@ -58,6 +59,15 @@ const TODO_STATUS: Record<string, { label: string; color: TEventColor }> = {
 const SYS: IUser = { id: "system", name: "System", picturePath: null };
 let _idCounter = 1;
 
+function isDynamicServerUsageError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "digest" in error &&
+    (error as { digest?: unknown }).digest === "DYNAMIC_SERVER_USAGE"
+  );
+}
+
 const mkEvt = (
   title: string,
   desc: string,
@@ -97,7 +107,11 @@ async function fetchAdminImages(admins: any[]): Promise<Map<string, string>> {
       if (u.imageUrl) map.set(u.id, u.imageUrl);
     }
   } catch (err) {
+    if (isDynamicServerUsageError(err)) throw err;
     console.error("[calendar/requests] fetchAdminImages error:", err);
+    reportError(err, {
+      tags: { feature: "admin-calendar", operation: "fetch-admin-images" },
+    });
   }
   return map;
 }
@@ -322,7 +336,11 @@ export async function getEvents(): Promise<IEvent[]> {
 
     return events;
   } catch (err) {
+    if (isDynamicServerUsageError(err)) throw err;
     console.error("[calendar/requests] getEvents error:", err);
+    reportError(err, {
+      tags: { feature: "admin-calendar", operation: "get-events" },
+    });
     return [];
   }
 }
@@ -344,7 +362,11 @@ export async function getUsers(): Promise<IUser[]> {
         picturePath: a.clerkId ? (clerkImages.get(a.clerkId) ?? null) : null,
       })),
     ];
-  } catch {
+  } catch (err) {
+    if (isDynamicServerUsageError(err)) throw err;
+    reportError(err, {
+      tags: { feature: "admin-calendar", operation: "get-users" },
+    });
     return [SYS];
   }
 }

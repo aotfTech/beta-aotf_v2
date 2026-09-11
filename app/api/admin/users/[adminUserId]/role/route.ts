@@ -8,8 +8,9 @@ import { PERMISSIONS } from "@/lib/admin/permissions";
 import { requirePermission } from "@/lib/admin/requirePermission";
 import AdminUser from "@/lib/models/admin/AdminUser";
 import Admin from "@/lib/models/Admin";
+import { withApiErrorHandling } from "@/lib/api-utils";
 
-export async function PATCH(
+async function patch(
   req: Request,
   { params }: { params: Promise<{ adminUserId: string }> },
 ) {
@@ -88,3 +89,8 @@ export async function PATCH(
 
   return NextResponse.json({ success: true, adminUserId, newRole: target.role });
 }
+
+export const PATCH = withApiErrorHandling(
+  patch,
+  "PATCH /api/admin/users/[adminUserId]/role",
+);

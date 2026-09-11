@@ -6,6 +6,8 @@ import Profile from "@/lib/models/Profile";
 import User from "@/lib/models/User";
 import { isClerkAdmin } from "@/lib/migration/clerk-user-filters";
 import { syncClerkAppUsers } from "@/lib/migration/sync-clerk-app-users";
+import { reportError } from "@/lib/sentry-report";
+import { withApiErrorHandling } from "@/lib/api-utils";
 import {
   createAppUser,
   type AdminCreateAppUserRole,
@@ -366,7 +368,7 @@ async function buildGlobalSummary(
   };
 }
 
-export async function POST(req: Request) {
+async function post(req: Request) {
   await dbConnect();
 
   const { userId } = await auth();
@@ -423,7 +425,7 @@ export async function POST(req: Request) {
   return NextResponse.json({ ok: true, user: result }, { status: 201 });
 }
 
-export async function GET(req: Request) {
+async function get(req: Request) {
   await dbConnect();
 
   const { userId } = await auth();
@@ -451,6 +453,10 @@ export async function GET(req: Request) {
       syncResult = await syncClerkAppUsers();
     } catch (err) {
       console.error("[app-users] Clerk sync failed:", err);
+      reportError(err, {
+        route: "GET /api/admin/app-users",
+        tags: { integration: "clerk", operation: "sync-app-users" },
+      });
     }
   }
 
@@ -492,3 +498,6 @@ export async function GET(req: Request) {
     sync: syncResult,
   });
 }
+
+export const POST = withApiErrorHandling(post, "POST /api/admin/app-users");
+export const GET = withApiErrorHandling(get, "GET /api/admin/app-users");

@@ -1,4 +1,5 @@
 import { handleApiError } from "@/lib/api-utils";
+import { reportError } from "@/lib/sentry-report";
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
@@ -45,6 +46,10 @@ export async function POST(req: NextRequest) {
 
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
     if (!spreadsheetId) {
+      reportError(new Error("Missing env var: GOOGLE_SHEET_ID"), {
+        route: "POST /api/admin/resync-sheet/enquiries",
+        tags: { integration: "google-sheets", operation: "enquiry-resync" },
+      });
       return NextResponse.json(
         { error: "Missing env var: GOOGLE_SHEET_ID" },
         { status: 500 },

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { withApiErrorHandling } from "@/lib/api-utils";
 
 export const dynamic = "force-dynamic";
 
@@ -8,7 +9,7 @@ export const dynamic = "force-dynamic";
  * Serves the hand-authored OpenAPI 3.1 specification for all AOTF API routes.
  * Consumed by the Fumadocs OpenAPI explorer at /docs/reference/openapi.
  */
-export async function GET() {
+async function get() {
   const spec = {
     openapi: "3.1.0",
     info: {
@@ -766,3 +767,5 @@ export async function GET() {
     },
   });
 }
+
+export const GET = withApiErrorHandling(get, "GET /api/openapi.json");

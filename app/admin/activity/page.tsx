@@ -680,6 +680,13 @@ function buildNarrative(log: ActivityLog): React.ReactNode {
   );
 }
 
+function getPublicTargetRef(log: ActivityLog): string | null {
+  if (log.targetRefId) return log.targetRefId;
+  if (log.targetType === "Post") return log.metadata?.postId ?? null;
+  if (log.targetType === "Job") return log.metadata?.jobId ?? null;
+  return null;
+}
+
 const PAGE_SIZE = 10;
 
 export default function SuperadminActivityLogs() {
@@ -710,6 +717,7 @@ export default function SuperadminActivityLogs() {
       setAdmins((prev) => mergeAdminOptions(prev, rawAdmins));
     } catch (err) {
       console.error("Failed to load admin list", err);
+      reportClientError(err, { feature: "admin-activity-admin-list" });
     }
   }, []);
 
@@ -763,7 +771,9 @@ export default function SuperadminActivityLogs() {
 
   useEffect(() => {
     void fetchAdmins();
-    void fetchLogs(1);
+    const initialSearch = new URLSearchParams(window.location.search).get("search");
+    if (initialSearch) setSearchTerm(initialSearch);
+    void fetchLogs(1, undefined, initialSearch ?? undefined);
   }, [fetchAdmins, fetchLogs]);
 
   const viewDetails = (log: ActivityLog) => {
@@ -1026,14 +1036,16 @@ export default function SuperadminActivityLogs() {
                           <p className="text-sm font-medium">
                             {selectedLog.targetType}
                           </p>
-                          {selectedLog.targetRefId && (
+                          {getPublicTargetRef(selectedLog) && (
                             <p className="text-xs font-mono font-semibold text-primary">
-                              {selectedLog.targetRefId}
+                              {getPublicTargetRef(selectedLog)}
                             </p>
                           )}
-                          <p className="text-xs text-default-400 font-mono">
-                            {selectedLog.targetId}
-                          </p>
+                          {!getPublicTargetRef(selectedLog) && (
+                            <p className="text-xs text-default-400 font-mono">
+                              {selectedLog.targetId}
+                            </p>
+                          )}
                         </CardBody>
                       </Card>
                       <Card className="bg-default-50 border-none shadow-none">

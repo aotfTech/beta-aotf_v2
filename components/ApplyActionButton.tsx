@@ -78,8 +78,12 @@ export default function ApplyActionButton({
           setIsApplied(data.applied);
         }
       })
-      .catch(() => {
+      .catch((error) => {
         // Ignore fetch failures to keep the button usable.
+        reportClientError(error, {
+          feature: "application-status-check",
+          extra: { target },
+        });
       });
 
     return () => controller.abort();

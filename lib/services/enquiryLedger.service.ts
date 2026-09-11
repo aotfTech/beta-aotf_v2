@@ -9,6 +9,7 @@ import EnquiryLedger, {
 } from "@/lib/models/EnquiryLedger";
 import { getGoogleSheetsClient, ensureTabExists } from "@/lib/googleSheets";
 import { formatDateIST } from "./postLedger.service";
+import { reportBackgroundError } from "@/lib/sentry-report";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -82,6 +83,11 @@ export async function syncEnquiryLedgerRowToSheet(
     const spreadsheetId = process.env.GOOGLE_SHEET_ID;
     if (!spreadsheetId) {
       console.error("[syncEnquiryLedgerRowToSheet] Missing env var: GOOGLE_SHEET_ID");
+      reportBackgroundError(new Error("Missing env var: GOOGLE_SHEET_ID"), {
+        operation: "sync-enquiry-ledger-row",
+        integration: "google-sheets",
+        extra: { enquiryId: ledger.enquiryId, reason: "missing-spreadsheet-id" },
+      });
       return;
     }
 
@@ -99,6 +105,11 @@ export async function syncEnquiryLedgerRowToSheet(
 
     if (!rowIndex) {
       console.error("[syncEnquiryLedgerRowToSheet] No valid rowIndex available", ledger);
+      reportBackgroundError(new Error("Enquiry ledger has no sheet row index"), {
+        operation: "sync-enquiry-ledger-row",
+        integration: "google-sheets",
+        extra: { enquiryId: ledger.enquiryId, reason: "missing-row-index" },
+      });
       return;
     }
 
@@ -116,6 +127,11 @@ export async function syncEnquiryLedgerRowToSheet(
       ledger.enquiryId,
       err,
     );
+    reportBackgroundError(err, {
+      operation: "sync-enquiry-ledger-row",
+      integration: "google-sheets",
+      extra: { enquiryId: ledger.enquiryId },
+    });
   }
 }
 
@@ -185,7 +201,11 @@ export async function upsertEnquiryLedger(enquiryId: string): Promise<IEnquiryLe
 
   // Fire-and-forget
   syncEnquiryLedgerRowToSheet(upserted).catch((err) =>
-    console.error("[upsertEnquiryLedger] Sheet sync failed:", err),
+    reportBackgroundError(err, {
+      operation: "sync-enquiry-ledger-row",
+      integration: "google-sheets",
+      extra: { enquiryId },
+    }),
   );
 
   return upserted;

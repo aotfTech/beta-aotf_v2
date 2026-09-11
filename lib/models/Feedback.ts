@@ -5,6 +5,7 @@ import {
   mapFeedback,
   feedbackEventKey,
 } from "@/lib/services/calendar-event.service";
+import { reportBackgroundError } from "@/lib/sentry-report";
 
 export const FEEDBACK_USER_TYPES = ["teacher", "teacher_candidate"] as const;
 export const FEEDBACK_CATEGORIES = [
@@ -111,19 +112,25 @@ FeedbackSchema.index(
 // ─── Calendar write-through hooks ──────────────────────────────────────────
 
 FeedbackSchema.post("save", function (doc) {
-  void upsertCalendarEvent(mapFeedback(doc.toObject()));
+  void upsertCalendarEvent(mapFeedback(doc.toObject())).catch((err) =>
+    reportBackgroundError(err, { operation: "upsert-feedback-calendar", integration: "calendar" }),
+  );
 });
 
 FeedbackSchema.post("findOneAndUpdate", function (doc) {
   if (!doc) return;
   const raw = typeof doc.toObject === "function" ? doc.toObject() : (doc as unknown as Record<string, any>);
-  void upsertCalendarEvent(mapFeedback(raw));
+  void upsertCalendarEvent(mapFeedback(raw)).catch((err) =>
+    reportBackgroundError(err, { operation: "upsert-feedback-calendar", integration: "calendar" }),
+  );
 });
 
 FeedbackSchema.post("findOneAndDelete", function (doc) {
   if (!doc) return;
   const raw = typeof doc.toObject === "function" ? doc.toObject() : (doc as unknown as Record<string, any>);
-  void deleteCalendarEvent(feedbackEventKey(raw._id?.toString?.() ?? ""));
+  void deleteCalendarEvent(feedbackEventKey(raw._id?.toString?.() ?? "")).catch((err) =>
+    reportBackgroundError(err, { operation: "delete-feedback-calendar", integration: "calendar" }),
+  );
 });
 
 const Feedback: Model<IFeedback> =

@@ -17,6 +17,7 @@ import ApplyActionButton from "@/components/ApplyActionButton";
 import { formatDisplayDate } from "@/lib/utils/display-date";
 import { addToast } from "@heroui/toast";
 import { useState } from "react";
+import { reportClientError } from "@/lib/client-report-error";
 
 interface JobPostProps {
   jobId: string;
@@ -144,6 +145,7 @@ const JobPost = ({
         color: "success",
       });
     } catch (error) {
+      reportClientError(error, { feature: "job-application-withdrawal" });
       addToast({
         description:
           error instanceof Error

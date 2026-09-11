@@ -10,6 +10,7 @@ import { Spinner } from "@heroui/spinner";
 import { Camera, Shield, Mail, User, ShieldCheck } from "lucide-react";
 import { ADMIN_PERMISSION_CATALOG } from "@/lib/admin/admin-permissions";
 import { addToast } from "@heroui/toast";
+import { reportClientError } from "@/lib/client-report-error";
 
 export default function AdminProfilePage() {
   const { user, isLoaded } = useUser();
@@ -58,7 +59,8 @@ export default function AdminProfilePage() {
       await user.setProfileImage({ file });
       await user.reload();
       addToast({ description: "Avatar updated successfully.", color: "success" });
-    } catch {
+    } catch (error) {
+      reportClientError(error, { feature: "admin-profile-avatar" });
       addToast({ description: "Failed to update avatar. Please try again.", color: "danger" });
     } finally {
       setIsAvatarSaving(false);

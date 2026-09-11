@@ -33,9 +33,9 @@ export async function GET(request: NextRequest) {
     const filter: Record<string, any> = {};
 
     if (invoiceType === "payout") {
-      filter.invoiceId = { $regex: /^INV-PAYOUT-/ };
+      filter.invoiceId = /^INV-PAYOUT-/;
     } else if (invoiceType === "regular") {
-      filter.invoiceId = { $not: /^INV-PAYOUT-/ };
+      filter.$nor = [{ invoiceId: /^INV-PAYOUT-/ }];
     }
 
     if (status && ["paid", "unpaid", "partial"].includes(status)) {
@@ -47,13 +47,18 @@ export async function GET(request: NextRequest) {
     }
 
     if (search) {
+      // Use RegExp values instead of nested $regex/$options objects. The app
+      // enables Mongoose sanitizeFilter globally, which can otherwise wrap
+      // operator objects and make this otherwise valid search fail.
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const searchRegex = new RegExp(escapedSearch, "i");
       // If invoiceType already set a regex on invoiceId, we must combine it properly.
       // But it's easier to just use $and for the type filter if search is present.
       const searchOr = [
-        { invoiceId: { $regex: search, $options: "i" } },
-        { "recipient.name": { $regex: search, $options: "i" } },
-        { "recipient.phone": { $regex: search, $options: "i" } },
-        { postId: { $regex: search, $options: "i" } },
+        { invoiceId: searchRegex },
+        { "recipient.name": searchRegex },
+        { "recipient.phone": searchRegex },
+        { postId: searchRegex },
       ];
 
       if (filter.invoiceId) {

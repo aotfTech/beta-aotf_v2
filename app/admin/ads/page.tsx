@@ -164,6 +164,10 @@ export default function AdsPage() {
 
   // ─── Filter state ───────────────────────────────────────────────────────
   const [searchTerm, setSearchTerm] = useState("");
+  useEffect(() => {
+    const initialSearch = new URLSearchParams(window.location.search).get("search");
+    if (initialSearch) setSearchTerm(initialSearch);
+  }, []);
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [filterPlacement, setFilterPlacement] = useState("");

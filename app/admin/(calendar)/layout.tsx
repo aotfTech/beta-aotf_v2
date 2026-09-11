@@ -2,6 +2,8 @@ import { CalendarProvider } from "@/calendar/contexts/calendar-context";
 import { getEvents, getUsers } from "@/calendar/requests";
 import BackButton from "@/components/BackButton";
 
+export const dynamic = "force-dynamic";
+
 export default async function Layout({
   children,
 }: {

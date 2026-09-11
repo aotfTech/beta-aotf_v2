@@ -1,5 +1,6 @@
 import { clerkClient } from "@clerk/nextjs/server";
 import User from "@/lib/models/User";
+import { reportError } from "@/lib/sentry-report";
 
 /**
  * Synchronizes the MongoDB User state to Clerk publicMetadata.
@@ -9,6 +10,10 @@ export async function syncUserMetadataToClerk(clerkId: string) {
   const user = await User.findOne({ clerkId }).lean();
   if (!user) {
     console.error(`[clerk-sync] Cannot sync metadata, user not found in DB: ${clerkId}`);
+    reportError(new Error("User not found during Clerk metadata sync"), {
+      tags: { integration: "clerk", operation: "sync-user-metadata" },
+      extra: { clerkId },
+    });
     return { success: false, error: "User not found in DB" };
   }
 
@@ -29,6 +34,10 @@ export async function syncUserMetadataToClerk(clerkId: string) {
     return { success: true };
   } catch (error) {
     console.error(`[clerk-sync] Failed to sync metadata to Clerk for ${clerkId}:`, error);
+    reportError(error, {
+      tags: { integration: "clerk", operation: "sync-user-metadata" },
+      extra: { clerkId },
+    });
     return { success: false, error: "Clerk API error" };
   }
 }

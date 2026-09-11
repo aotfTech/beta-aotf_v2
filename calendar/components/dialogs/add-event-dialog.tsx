@@ -11,6 +11,7 @@ import { Button } from "@heroui/button";
 import { Textarea } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
 import { addToast } from "@heroui/toast";
+import { reportClientError } from "@/lib/client-report-error";
 
 import {
   Modal,
@@ -157,6 +158,7 @@ export function AddEventDialog({ children, startDate, startTime }: IProps) {
       // Refresh calendar events so the new reminder appears
       await refreshEvents();
     } catch (err) {
+      reportClientError(err, { feature: "admin-calendar-add-event" });
       addToast({
         description: err instanceof Error ? err.message : "Failed to save",
         color: "danger",

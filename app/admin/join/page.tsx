@@ -5,6 +5,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { RedirectToSignIn, SignUp, useUser } from "@clerk/nextjs";
 import { Button } from "@heroui/button";
+import { reportClientError } from "@/lib/client-report-error";
 
 type InviteState = {
   email: string;
@@ -46,7 +47,8 @@ function AdminJoinContent() {
           setInvite(payload);
           setError(null);
         }
-      } catch {
+      } catch (error) {
+        reportClientError(error, { feature: "admin-invite-validation" });
         setError("Unable to validate invite right now.");
       } finally {
         setLoadingInvite(false);
@@ -74,7 +76,8 @@ function AdminJoinContent() {
         }
         setCompleted(true);
         router.replace("/admin/dashboard");
-      } catch {
+      } catch (error) {
+        reportClientError(error, { feature: "admin-invite-completion" });
         setError("Failed to complete admin onboarding.");
       } finally {
         setCompleting(false);

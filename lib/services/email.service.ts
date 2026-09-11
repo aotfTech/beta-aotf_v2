@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { reportError } from "@/lib/sentry-report";
 
 let _resend: Resend | null = null;
 function getResend(): Resend {
@@ -10,6 +11,12 @@ function getResend(): Resend {
 
 const FROM_EMAIL = process.env.EMAIL_FROM || "AOTF Admin <noreply@aotf.com>";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+
+function reportEmailFailure(error: unknown, operation: string): void {
+  reportError(error, {
+    tags: { integration: "resend", operation },
+  });
+}
 
 /**
  * Send admin account creation email with temporary credentials
@@ -115,6 +122,7 @@ export async function sendAdminCreationEmail(params: {
     };
   } catch (error) {
     console.error("[email-service] Error sending admin creation email:", error);
+    reportEmailFailure(error, "send-admin-creation-email");
     return {
       success: false,
       error: "Failed to send admin creation email",
@@ -194,6 +202,7 @@ export async function sendPasswordResetNotification(params: {
       "[email-service] Error sending password reset notification:",
       error,
     );
+    reportEmailFailure(error, "send-password-reset-notification");
     return {
       success: false,
       error: "Failed to send password reset notification",
@@ -274,6 +283,7 @@ export async function sendAccountLockedEmail(params: {
     };
   } catch (error) {
     console.error("[email-service] Error sending account locked email:", error);
+    reportEmailFailure(error, "send-account-locked-email");
     return {
       success: false,
       error: "Failed to send account locked email",
@@ -353,6 +363,7 @@ export async function sendAccountUnlockedEmail(params: {
       "[email-service] Error sending account unlocked email:",
       error,
     );
+    reportEmailFailure(error, "send-account-unlocked-email");
     return {
       success: false,
       error: "Failed to send account unlocked email",
@@ -409,6 +420,7 @@ export async function sendAdminInviteEmail(params: {
     return { success: true, messageId: result.data?.id };
   } catch (error) {
     console.error("[email-service] Error sending admin invite email:", error);
+    reportEmailFailure(error, "send-admin-invite-email");
     return { success: false, error: "Failed to send admin invite email" };
   }
 }

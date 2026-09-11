@@ -9,6 +9,7 @@ import { Chip } from "@heroui/chip";
 import { Divider } from "@heroui/divider";
 import BackButton from "@/components/BackButton";
 import { siteConfig } from "@/config/site";
+import { reportClientError } from "@/lib/client-report-error";
 import {
   Camera,
   CameraOff,
@@ -218,6 +219,7 @@ export default function VerifyScannerPage() {
       controlsRef.current = controls;
       setScannerState("scanning");
     } catch (err: unknown) {
+      reportClientError(err, { feature: "credential-verification-scanner" });
       setScannerState("error");
       setErrorMsg(classifyMediaError(err));
     }

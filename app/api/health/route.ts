@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import { version } from "@/package.json";
+import { reportError } from "@/lib/sentry-report";
 
 // Force this route to be dynamic so it always runs fresh (never cached)
 export const dynamic = "force-dynamic";
+
+// Bound repeated probe failures so database outages do not flood the free tier.
+const HEALTH_ERROR_REPORT_INTERVAL_MS = 5 * 60 * 1000;
+let lastHealthErrorReportAt = 0;
 
 /**
  * GET /api/health
@@ -41,9 +46,18 @@ export async function GET() {
     await dbConnect();
     dbStatus = "connected";
     httpStatus = 200;
-  } catch {
+  } catch (error) {
     // DB unreachable — still return a response so monitors know the app is alive
     dbStatus = "disconnected";
+    const now = Date.now();
+    if (now - lastHealthErrorReportAt >= HEALTH_ERROR_REPORT_INTERVAL_MS) {
+      lastHealthErrorReportAt = now;
+      reportError(error, {
+        route: "GET /api/health",
+        tags: { layer: "health", dependency: "mongodb" },
+        extra: { httpStatus: 503 },
+      });
+    }
   }
 
   return NextResponse.json(

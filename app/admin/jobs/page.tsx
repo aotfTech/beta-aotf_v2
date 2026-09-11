@@ -77,6 +77,14 @@ const Page = () => {
   const [selectedDay, setSelectedDay] = useState("");
   const [selectedDateChip, setSelectedDateChip] = useState("");
 
+  // Support admin links such as /admin/jobs?search=J-07092600.
+  useEffect(() => {
+    const initialSearch = new URLSearchParams(window.location.search).get(
+      "search",
+    );
+    if (initialSearch) setSearchTerm(initialSearch);
+  }, []);
+
   // Cancel modal
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [cancelTarget, setCancelTarget] = useState<JobPost | null>(null);
