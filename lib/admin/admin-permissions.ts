@@ -24,7 +24,8 @@ export type AdminPermissionKey =
   | "canResetAdminPasswords"
   | "canTerminateAdmins"
   | "canViewAuditLogs"
-  | "canManageRenownedTeachers";
+  | "canManageRenownedTeachers"
+  | "canManageTeacherReviews";
 
 export const ADMIN_PERMISSION_CATALOG: Array<{
   key: AdminPermissionKey;
@@ -58,6 +59,7 @@ export const ADMIN_PERMISSION_CATALOG: Array<{
   { key: "canResetAdminPasswords", label: "Reset admin passwords", explanation: "Force a password reset for other administrators.", group: "admin" },
   { key: "canTerminateAdmins", label: "Terminate admins", explanation: "Permanently delete administrator accounts.", group: "admin" },
   { key: "canViewAuditLogs", label: "View audit logs", explanation: "Access system audit logs for security and compliance.", group: "admin" },
+  { key: "canManageTeacherReviews", label: "Manage teacher reviews", explanation: "Add, edit, or remove teacher reviews.", group: "content" },
 ];
 
 export const ADMIN_PERMISSION_KEYS = ADMIN_PERMISSION_CATALOG.map(

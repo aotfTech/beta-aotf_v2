@@ -2,6 +2,7 @@ import dbConnect from "@/lib/db";
 import Review, { type IReview, type ReviewStatus } from "@/lib/models/Review";
 import User from "@/lib/models/User";
 import Profile from "@/lib/models/Profile";
+import { NotFoundError } from "@/lib/errors";
 
 export type PublicReview = {
   id: string;
@@ -100,7 +101,7 @@ export async function createReviewAsAdmin(
 
   const username = input.username.toLowerCase().trim();
   const user = await User.findOne({ username }).lean();
-  if (!user) throw new Error("User not found");
+  if (!user) throw new NotFoundError("User");
 
   const profile = await Profile.findOne({ userId: user._id }).lean();
 
@@ -148,13 +149,13 @@ export async function updateReviewAsAdmin(
     { new: true },
   );
 
-  if (!updated) throw new Error("Review not found");
+  if (!updated) throw new NotFoundError("Review");
   return toAdminReview(updated.toObject() as unknown as IReview);
 }
 
 export async function deleteReviewAsAdmin(reviewId: string) {
   await dbConnect();
   const deleted = await Review.findByIdAndDelete(reviewId);
-  if (!deleted) throw new Error("Review not found");
+  if (!deleted) throw new NotFoundError("Review");
   return { id: reviewId };
 }

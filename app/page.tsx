@@ -10,26 +10,17 @@ import LeadershipCard from "@/components/home/LeadershipCard";
 import { Card } from "@heroui/card";
 import AdPlacementSlot from "@/components/AdPlacementSlot";
 import CitySelector from "@/components/CitySelector";
+import { listTeacherReviews } from "@/lib/services/teacher-review.service";
 
-export default function Home() {
-  const teacherReviews = [
-    {
-      id: "1",
-      name: "Rahul Sharma",
-      qualification: "M.Sc. Mathematics",
-      experience: 12,
-      message:
-        "Teaching is about inspiring students to think independently and solve real-world problems.",
-    },
-    {
-      id: "2",
-      name: "Priya Das",
-      qualification: "M.A. English",
-      experience: 8,
-      message:
-        "I focus on building confidence and communication skills through practical learning.",
-    },
-  ];
+export default async function Home() {
+  const dbTeacherReviews = await listTeacherReviews(true);
+  const teacherReviews = dbTeacherReviews.map((r) => ({
+    id: r._id.toString(),
+    name: r.name,
+    qualification: r.qualification,
+    experience: r.experience,
+    message: r.message,
+  }));
 
   return (
     <>
