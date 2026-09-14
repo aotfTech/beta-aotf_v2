@@ -49,10 +49,10 @@ Note the **first seen** and **last seen** timestamps — a spike after a deploy 
 
 ### API route errors
 
-If the tag or stack trace mentions a route like `GET /api/v1/admin/posts`:
+If the tag or stack trace mentions a route like `GET /api/v1/posts`:
 
 1. Open the matching file under `app/api/` (App Router maps URL segments to directories)
-2. Find the `catch` block that calls `handleApiError(error, "GET /api/v1/admin/posts")` or `reportError()`
+2. Find the `catch` block that calls `handleApiError(error, "GET /api/v1/posts")` or `reportError()`
 
 ### Client errors
 
@@ -106,17 +106,6 @@ Do not mark operational noise as **Resolved** in Sentry without fixing the filte
 3. **Deploy** to production via the normal git → Vercel pipeline
 4. **Watch** the issue in Sentry — event count should drop to zero for that release
 5. **Resolve** the issue in Sentry once confirmed fixed (or let auto-resolve on release if configured)
-
-## Step 7 — Cron-Specific Triage
-
-For failures in the **`manage-unpaid-users`** cron:
-
-1. Sentry → **Crons** → monitor `manage-unpaid-users`
-2. Check status: missed, failed, or timed out
-3. Verify in Vercel:
-   - Cron is configured in `vercel.json`
-   - `CRON_SECRET` is set in environment variables
-4. Open `app/api/v1/cron/manage-unpaid-users/route.ts` and review the failure path — partial failures call `reportError` with details about which users failed
 
 ## Troubleshooting — Nothing Appears in Sentry
 

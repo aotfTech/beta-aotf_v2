@@ -47,7 +47,7 @@ const profileSchema = new Schema(
     board: {
       type: String,
       default: null,
-      enum: ["CBSE", "ICSE", "WB", null],
+      enum: ["CBSE", "ICSE", "ISC", "IB", "WB-Bengali", "WB-English", null],
     },
     gender: {
       type: String,

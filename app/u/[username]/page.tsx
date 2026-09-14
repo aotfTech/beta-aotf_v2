@@ -41,6 +41,9 @@ import {
 import { RiRefund2Line } from "react-icons/ri";
 import Stack from "@/components/reactbits/ui/Stack";
 import { IoCameraOutline, IoNotificationsCircleOutline } from "react-icons/io5";
+import EditProfileDetails, {
+  type EditableProfileDetails,
+} from "@/components/teacher/profile/EditProfileDetails";
 
 // ── Types ───────────────────────────────────────────────────────────
 
@@ -60,6 +63,7 @@ interface ProfileData {
   jobExp: string | null;
   qualification: string | null;
   board: string | null;
+  gender: string | null;
 }
 
 interface UserData {
@@ -564,6 +568,18 @@ export default function ProfilePage() {
               )}
 
               {/* Professional Details */}
+              {isOwnProfile && (
+                <div className="flex justify-end max-w-lg mx-auto">
+                  <EditProfileDetails
+                    details={profile as EditableProfileDetails}
+                    onSaved={(updated) =>
+                      setProfile((current) =>
+                        current ? { ...current, ...updated } : current,
+                      )
+                    }
+                  />
+                </div>
+              )}
               <ProfessionalDetailsCard
                 qualification={profile.qualification}
                 schoolBoard={profile.board}

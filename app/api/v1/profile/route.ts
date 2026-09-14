@@ -17,15 +17,29 @@ export async function PATCH(req: Request) {
     }
 
     const body = await req.json();
+    const editableFields = new Set([
+      "phone",
+      "whatsapp",
+      "address",
+      "teachingExp",
+      "jobExp",
+      "qualification",
+      "board",
+      "gender",
+    ]);
+    const unsupportedField = Object.keys(body).find(
+      (field) => !editableFields.has(field),
+    );
+    if (unsupportedField) {
+      return NextResponse.json(
+        {
+          error: `${unsupportedField} cannot be changed from the profile editor.`,
+        },
+        { status: 400 },
+      );
+    }
+
     const {
-      username,
-      email,
-      name,
-      displayName,
-      bio,
-      location,
-      subjects,
-      experience,
       phone,
       whatsapp,
       address,
@@ -33,15 +47,8 @@ export async function PATCH(req: Request) {
       jobExp,
       qualification,
       board,
+      gender,
     } = body as {
-      username?: string;
-      email?: string;
-      name?: string;
-      displayName?: string;
-      bio?: string;
-      location?: string;
-      subjects?: string[];
-      experience?: number;
       phone?: string;
       whatsapp?: string;
       address?: string;
@@ -49,49 +56,8 @@ export async function PATCH(req: Request) {
       jobExp?: string;
       qualification?: string;
       board?: string;
+      gender?: string;
     };
-
-    // Identity fields are immutable after account creation.
-    if (
-      username !== undefined ||
-      email !== undefined ||
-      name !== undefined ||
-      displayName !== undefined
-    ) {
-      return NextResponse.json(
-        {
-          error: "Name, username, and email are locked after account creation.",
-        },
-        { status: 400 },
-      );
-    }
-
-    // Validate bio length
-    if (bio !== undefined && bio.length > 300) {
-      return NextResponse.json(
-        { error: "Bio must be 300 characters or less" },
-        { status: 400 },
-      );
-    }
-
-    // Validate subjects array
-    if (subjects !== undefined && !Array.isArray(subjects)) {
-      return NextResponse.json(
-        { error: "Subjects must be an array" },
-        { status: 400 },
-      );
-    }
-
-    // Validate experience
-    if (
-      experience !== undefined &&
-      (typeof experience !== "number" || experience < 0 || experience > 50)
-    ) {
-      return NextResponse.json(
-        { error: "Experience must be a number between 0 and 50" },
-        { status: 400 },
-      );
-    }
 
     // Validate phone / whatsapp (10-digit Indian mobile)
     const phoneRegex = /^[6-9]\d{9}$/;
@@ -138,13 +104,22 @@ export async function PATCH(req: Request) {
       );
     }
 
+    const normalizedGender = gender?.trim().toLowerCase() as
+      | "male"
+      | "female"
+      | "other"
+      | undefined;
+    const validGenders = ["male", "female", "other"];
+    if (normalizedGender !== undefined && !validGenders.includes(normalizedGender)) {
+      return NextResponse.json(
+        { error: "Invalid gender value" },
+        { status: 400 },
+      );
+    }
+
     await dbConnect();
 
     const updateFields: Record<string, unknown> = {};
-    if (bio !== undefined) updateFields.bio = bio;
-    if (location !== undefined) updateFields.location = location;
-    if (subjects !== undefined) updateFields.subjects = subjects;
-    if (experience !== undefined) updateFields.experience = experience;
     if (phone !== undefined) updateFields.phone = phone;
     if (whatsapp !== undefined) updateFields.whatsapp = whatsapp;
     if (address !== undefined) updateFields.address = address;
@@ -152,9 +127,14 @@ export async function PATCH(req: Request) {
     if (jobExp !== undefined) updateFields.jobExp = jobExp;
     if (qualification !== undefined) updateFields.qualification = qualification;
     if (board !== undefined) updateFields.board = board;
+    if (normalizedGender !== undefined) updateFields.gender = normalizedGender;
 
     // Ensure User + Profile exist (self-heals if the Clerk webhook was delayed)
     const user = await ensureUserRecord(clerkId);
+
+    if (normalizedGender !== undefined) {
+      await User.updateOne({ clerkId }, { $set: { gender: normalizedGender } });
+    }
 
     const profile = await Profile.findOneAndUpdate(
       { clerkId },

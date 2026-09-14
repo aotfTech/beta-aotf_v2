@@ -56,7 +56,7 @@ From the downloaded JSON file, you need:
 ```bash
 GOOGLE_SERVICE_ACCOUNT_EMAIL=aotf-sheets-sync@your-project.iam.gserviceaccount.com
 GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\nMII...\n-----END RSA PRIVATE KEY-----\n"
-GOOGLE_SHEETS_SPREADSHEET_ID=1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms
+GOOGLE_SHEET_ID=1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms
 ```
 
 > **Note**: The private key contains literal `\n` sequences. Vercel stores them correctly. In `.env.local`, wrap the value in double quotes: `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY="-----BEGIN...\n..."`.
@@ -75,7 +75,7 @@ GOOGLE_SHEETS_SPREADSHEET_ID=1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms
    - Set role to **Editor**
    - Uncheck "Notify people" → Share
 
-4. Set `GOOGLE_SHEETS_SPREADSHEET_ID` to the ID you copied.
+4. Set `GOOGLE_SHEET_ID` to the ID you copied.
 
 ## 5. Test the Connection
 

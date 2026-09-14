@@ -135,23 +135,18 @@ Generates a Clerk password reset link and sets `requirePasswordChange: true`.
 ## Analytics
 
 ```http
-GET /api/v1/admin/analytics
+GET /api/v1/admin/dashboard
 Authorization: Bearer <admin_clerk_jwt>
 ```
 
-**Permission**: `canViewAnalytics`
+**Permission**: admin dashboard access
 
-Returns aggregated stats:
-- Total posts/jobs by status
-- Application conversion rates (applied → approved)
-- Monthly registration counts
-- Enquiry resolution rate
-- Top subjects/locations by demand
+Returns the aggregate metrics used by the admin dashboard, including user, post, job, application, enquiry, payment, and feedback summaries.
 
 ## Calendar
 
 ```http
-GET /api/v1/admin/calendar
+GET /api/admin/calendar-events
 Authorization: Bearer <admin_clerk_jwt>
 ```
 
@@ -166,10 +161,8 @@ Returns `CalendarEvent` documents for the specified range.
 ## Todo Events
 
 ```http
-GET /api/v1/admin/todos
-POST /api/v1/admin/todos
-PATCH /api/v1/admin/todos/:todoId
-DELETE /api/v1/admin/todos/:todoId
+GET /api/admin/todos
+POST /api/admin/todos
 Authorization: Bearer <admin_clerk_jwt>
 ```
 
@@ -211,13 +204,4 @@ Authorization: Bearer <admin_clerk_jwt>
 
 **Permission**: `canViewPayments`
 
-List all provider registration payments with Razorpay IDs and amounts.
-
-```http
-POST /api/v1/admin/payments/refund
-Authorization: Bearer <admin_clerk_jwt>
-```
-
-**Permission**: `canProcessRefunds`
-
-Initiates a Razorpay refund for a given payment ID.
+List provider registration payments and their associated post/job payment information. Payout generation and payout percentage updates are separate admin endpoints under `/api/v1/admin/payments`.

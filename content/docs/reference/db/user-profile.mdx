@@ -27,7 +27,6 @@ The `User` model is the **primary account record** for all providers. It's creat
 | `onboardingCompleted` | `boolean` | — | `false` | Gates access to the platform |
 | `status` | `enum` | — | `"active"` | `active`, `blocked`, `deleted` |
 | `registrationPaymentId` | `ObjectId` | — | `null` | Ref to `Payment` document |
-| `deletionWarningEmailSentAt` | `Date` | — | `null` | When the 5-day warning email was sent |
 | `createdAt` | `Date` | Auto | — | From `timestamps: true` |
 | `updatedAt` | `Date` | Auto | — | From `timestamps: true` |
 
@@ -128,4 +127,4 @@ OnboardingDetailsSchema.index(
 
 **For paid users**: `expiresAt` is set to `null` immediately after payment — the TTL never fires.
 
-**For non-paying users**: After 30 days, the document is automatically deleted by MongoDB. A cron job (or Vercel cron) also sends a 5-day warning email by setting `User.deletionWarningEmailSentAt`.
+**For non-paying users**: After 30 days, the document is automatically deleted by MongoDB.

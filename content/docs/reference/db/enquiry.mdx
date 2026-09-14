@@ -82,7 +82,7 @@ Every `EnquiryLedger` upsert triggers a write to the **"Enquiries"** tab in the 
 ```ts
 // lib/services/enquiryLedger.service.ts
 await sheets.spreadsheets.values.update({
-  spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
+  spreadsheetId: process.env.GOOGLE_SHEET_ID,
   range: `Enquiries!A${rowIndex}:Z${rowIndex}`,
   valueInputOption: "RAW",
   requestBody: { values: [mapLedgerToRow(ledger)] },

@@ -94,7 +94,6 @@ export async function seedClerkUserInMongo(db, clerkUser, legacyTeacher = null) 
       onboardingCompleted: isMigratedLegacy ? true : metadata.onboardingCompleted === true,
       status: "active",
       registrationPaymentId: null,
-      deletionWarningEmailSentAt: null,
       createdAt: now,
       updatedAt: now,
     });

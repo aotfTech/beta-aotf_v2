@@ -58,7 +58,7 @@ No authentication required. No request body.
 
 - Returns **HTTP 200** when DB is connected, **HTTP 503** when DB is unreachable
 - Uses `export const dynamic = "force-dynamic"` — never cached by Vercel CDN
-- Calls `dbConnect()` internally — this wakes a paused MongoDB Atlas M0 cluster
+- Calls `dbConnect()` internally so the response also verifies database connectivity
 - First call after a cold period may take **5–15 seconds** while MongoDB resumes
 
 ## Usage Examples

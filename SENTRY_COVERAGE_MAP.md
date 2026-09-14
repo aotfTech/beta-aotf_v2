@@ -83,7 +83,6 @@ The following route groups currently use `handleApiError`, `reportError`, or dir
 - Payments, including order creation, verification, and legacy activation.
 - Renowned teachers.
 - Clerk and Razorpay webhooks.
-- Cron processing for unpaid users.
 - Global API error handling through `lib/api-utils.ts`.
 
 This coverage is not necessarily complete at every internal operation because nested catches and asynchronous work can still bypass the outer handler. See the remaining gaps below.
@@ -222,22 +221,6 @@ Noise controls:
 
 - Do not report every individual health probe failure.
 - Prefer a throttled event, state-transition event, or Sentry check-in for recurring health failures.
-
-### Scheduled cleanup
-
-Location:
-
-- `app/api/v1/cron/manage-unpaid-users/route.ts`
-
-Current state:
-
-- This route already uses `captureCheckIn()` and reports aggregate failures.
-
-Remaining work:
-
-- Verify that the monitor is configured in Sentry.
-- Confirm that failed-record details do not contain unnecessary personal data.
-- Keep one aggregate event per run rather than one event per expected failed record.
 
 ## P1: core workflow coverage
 
@@ -519,8 +502,8 @@ For the free tier, do not increase global traces or replay sessions without chec
 The implementation should follow these rules:
 
 1. Capture unexpected 5xx-level failures.
-2. Capture failures in payments, webhooks, Clerk synchronization, database connectivity, Sheets synchronization, email delivery, and scheduled jobs.
-3. Capture one aggregate event for a batch or cron run instead of one event per failed record.
+2. Capture failures in payments, webhooks, Clerk synchronization, database connectivity, Sheets synchronization, and email delivery.
+3. Capture one aggregate event for a batch instead of one event per failed record.
 4. Do not capture normal 401, 403, 404, 409, 415, or 429 responses as exceptions.
 5. Do not capture Zod validation failures as exceptions.
 6. Do not capture duplicate-key errors unless their frequency indicates a defect.
@@ -537,7 +520,6 @@ The implementation should follow these rules:
 - Added Clerk synchronization, Clerk service, Resend email, and webhook cleanup reporting.
 - Added throttled database failure reporting to the health endpoint.
 - Added shared route handling for previously uncovered API routes.
-- Cron monitor configuration and event volume still require deployment/Sentry-dashboard verification.
 
 ### Phase 2: P1 — implemented
 

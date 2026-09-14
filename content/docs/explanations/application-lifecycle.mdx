@@ -76,7 +76,7 @@ The DC stage involves scheduling a trial session between the provider and consum
 
 1. Admin calls the provider → discusses the requirement
 2. Admin schedules a demo call date (`dcDate`)
-3. `PATCH /api/v1/applications/:id` with `{ status: "DC", dcDate: "2026-01-15T15:00:00Z" }`
+3. `PATCH /api/v1/posts/:postId/applications/:applicationId` with `{ status: "DC", dcDate: "2026-01-15T15:00:00Z" }` (or the equivalent `/jobs/:jobId/applications/:applicationId` route)
 4. A `CalendarEvent` is created for the demo date
 5. Admin reminds the provider via notification
 
@@ -93,10 +93,11 @@ After the demo:
 Providers can withdraw at any stage before `approved`:
 
 ```http
-PATCH /api/v1/applications/:id
+DELETE /api/v1/me/applications/:applicationId
 Authorization: Bearer <provider_jwt>
-{ "status": "withdrawn" }
 ```
+
+The provider withdrawal route records the application as `withdrawn`; admins update status through the post- or job-scoped application route.
 
 Withdrawn applications count toward the provider's history but don't affect their reputation score (no review triggers).
 

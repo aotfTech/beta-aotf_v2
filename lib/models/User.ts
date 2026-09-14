@@ -58,6 +58,11 @@ const userSchema = new Schema(
       default: "teacher",
       required: true,
     },
+    gender: {
+      type: String,
+      enum: ["male", "female", "other", null],
+      default: null,
+    },
     hasTuitionAccess: { type: Boolean, default: false },
     hasCandidateAccess: { type: Boolean, default: false },
     createdByAdmin: { type: Boolean, default: false },
@@ -78,8 +83,6 @@ const userSchema = new Schema(
       ref: "Payment",
       default: null,
     },
-    // Tracks when the 5-day warning email was sent (null = not yet sent).
-    deletionWarningEmailSentAt: { type: Date, default: null },
   },
   { timestamps: true },
 );

@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/v1/cron/manage-unpaid-users",
-      "schedule": "30 21 * * *"
-    }
-  ]
-}

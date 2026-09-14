@@ -119,7 +119,7 @@ All routes use a centralised `handleApiError` utility:
 // lib/api-utils.ts
 export function handleApiError(
   error: unknown,
-  context?: string,  // route label, e.g. "GET /api/v1/admin/posts"
+  context?: string,  // route label, e.g. "GET /api/v1/posts"
 ): NextResponse {
   // Zod validation → 400 with fieldErrors
   // AppError subclasses → their statusCode (4xx operational errors are NOT sent to Sentry)
@@ -220,7 +220,7 @@ export async function POST(req: NextRequest) {
 AOTF applies security headers at the Next.js config level:
 
 ```js
-// next.config.ts — security headers applied to all routes
+// next.config.mjs — security headers applied to all routes
 {
   "Content-Security-Policy": "default-src 'self'; ...",
   "X-Frame-Options": "DENY",

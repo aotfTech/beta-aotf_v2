@@ -20,13 +20,7 @@ AOTF runs on **Vercel's free Hobby tier** for hosting and **MongoDB Atlas M0** (
 2. Import your Git repository
 3. Vercel auto-detects Next.js — no build config needed
 
-The `vercel.json` in the project root sets:
-
-```json
-{
-  "framework": "nextjs"
-}
-```
+Vercel can deploy the repository using the `build` script in `package.json`; there is no project `vercel.json` file to maintain.
 
 ## 2. Set Environment Variables
 
@@ -45,7 +39,6 @@ CLERK_WEBHOOK_SECRET=whsec_...
 
 # App
 NEXT_PUBLIC_APP_URL=https://aotf.in
-CRON_SECRET=...
 
 # Razorpay
 RAZORPAY_KEY_ID=rzp_live_...
@@ -61,7 +54,7 @@ CLOUDINARY_API_SECRET=...
 # Google Sheets
 GOOGLE_SERVICE_ACCOUNT_EMAIL=...@....iam.gserviceaccount.com
 GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n..."
-GOOGLE_SHEETS_SPREADSHEET_ID=...
+GOOGLE_SHEET_ID=...
 
 # Resend (email)
 RESEND_API_KEY=re_...
@@ -81,8 +74,7 @@ After the first production deploy with Sentry enabled:
 
 1. **Runtime DSN** — Confirm `NEXT_PUBLIC_SENTRY_DSN` is set for the **Production** environment in Vercel
 2. **Source maps** (recommended) — Set `SENTRY_AUTH_TOKEN`, `SENTRY_ORG=aotf`, and `SENTRY_PROJECT=javascript-nextjs` so builds upload source maps for readable stack traces
-3. **Cron monitor** — In Sentry → **Crons**, create a monitor named `manage-unpaid-users` with schedule `30 21 * * *` (must match the slug in `app/api/v1/cron/manage-unpaid-users/route.ts`)
-4. **Smoke test** — Trigger a test error or wait for the first real event; confirm it appears under [Sentry Issues](https://aotf.sentry.io/) filtered to `production`
+3. **Smoke test** — Trigger a test error or wait for the first real event; confirm it appears under [Sentry Issues](https://aotf.sentry.io/) filtered to `production`
 
 For triage workflow and troubleshooting when events are missing, see [Triage Sentry Errors](/docs/how-to/triage-sentry-errors). For the full monitoring overview, see [Monitoring with Sentry](/docs/explanations/monitoring-sentry).
 

@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import dbConnect from "./lib/db.ts";
-import PostLedger from "./lib/models/PostLedger.ts";
+import dbConnect from "./lib/db";
+import PostLedger from "./lib/models/PostLedger";
 
 dotenv.config({ path: ".env.local" });
 

@@ -43,7 +43,6 @@ AOTF currently runs efficiently on free-tier infrastructure. However, as the pla
 **The Problem**: The first user to hit the site after an hour of inactivity still experiences a 4–8 second load time.
 **The Fix**: 
 1. Upgrade MongoDB to M10 (removes auto-pause).
-2. Set up a Vercel Cron Job to ping `/api/health` every 5 minutes to keep the serverless function warm.
 
 ## 7. Email Delivery
 

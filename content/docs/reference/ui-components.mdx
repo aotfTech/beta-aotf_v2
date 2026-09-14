@@ -118,33 +118,25 @@ Used for micro-animation JSON files (loading states, success indicators):
 | `clsx` | Conditional class name merging |
 | `tailwind-merge` | Tailwind class conflict resolution |
 | `date-fns` | Date formatting and arithmetic |
-| `dayjs` | Lightweight alternative for calendar operations |
 | `react-hook-form` | Form state management |
 | `zod` | Schema validation (shared client + server) |
-| `sonner` | Toast notifications |
-| `react-big-calendar` | Open-source calendar grid component |
-| `recharts` | Analytics chart library |
+| `react-dnd` / `react-dnd-html5-backend` | Drag-and-drop interactions |
+| `react-day-picker` / `@internationalized/date` | Date selection and date values |
+| `@tiptap/react` | Rich text editing |
 | `lucide-react` | Icon library |
 | `react-icons` | Additional icon sets |
 
 ## Data Fetching
 
-AOTF uses **SWR** for client-side data fetching with cache invalidation:
-
-```json
-"swr": "^2.x"
-```
-
-Server-side data is fetched in Server Components using `fetch` with Next.js caching directives.
+AOTF uses native `fetch`, React state/hooks, and server actions where appropriate. Server-side data is fetched in Server Components or route handlers; client components call the `/api` routes directly.
 
 ## Admin-Specific UI
 
 The admin panel (`/admin/*`) uses a custom layout with:
 
-- `react-big-calendar` — Full admin calendar view with drag-and-drop (OSS, credited in the calendar view)
-- `recharts` — Analytics dashboard charts
-- `@tanstack/react-table` — Server-side paginated data tables
-- `Tiptap` — Rich text notes on applications/enquiries
+- `react-dnd` — Drag-and-drop interactions in admin workflows
+- `@tiptap/react` — Rich text notes and content editing
+- HeroUI and Radix primitives — Accessible controls, dialogs, tables, forms, and overlays
 
 ## Custom Component Directory
 

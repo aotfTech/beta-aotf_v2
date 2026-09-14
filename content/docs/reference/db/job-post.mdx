@@ -134,7 +134,7 @@ Every `PostLedger` upsert writes to the **"Tuitions"** tab:
 ```ts
 // lib/services/postLedger.service.ts  
 await sheets.spreadsheets.values.update({
-  spreadsheetId: process.env.GOOGLE_SHEETS_SPREADSHEET_ID,
+  spreadsheetId: process.env.GOOGLE_SHEET_ID,
   range: `Tuitions!A${sheetRowIndex}:AZ${sheetRowIndex}`,
   valueInputOption: "RAW",
   requestBody: { values: [mapLedgerToRow(ledger)] },

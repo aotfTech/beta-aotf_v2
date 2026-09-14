@@ -47,11 +47,21 @@ This documentation follows the **[Diataxis](https://diataxis.fr/)** framework:
 | Layer | Technology |
 |---|---|
 | Framework | Next.js 16.1 (App Router) |
-| Database | MongoDB Atlas M0 (free tier) via Mongoose |
+| Database | MongoDB via Mongoose |
 | Auth | Clerk (password sign-up; Google SSO for migrated users) |
 | Payments | Razorpay (provider registration fee) |
 | Media | Cloudinary |
 | Email | Resend |
 | Monitoring | Sentry |
 | Docs | Fumadocs v16 |
-| Hosting | Vercel (free tier) |
+| Hosting | Vercel or another Next.js-compatible Node host |
+
+## Current application areas
+
+- Public tuition posts and freelance jobs
+- Provider onboarding, profiles, applications, reviews, and feedback
+- Consumer enquiries and admin-managed matching workflows
+- Admin dashboards, payments, invoices, ads, calendar events, WhatsApp groups, and CRM activity
+- Clerk webhooks, Razorpay webhooks, Google Sheets ledger synchronization, Cloudinary media, Resend email, and Sentry monitoring
+
+The source of truth for route and schema details is the code under `app/api`, `app`, and `lib/models`. Pages in this site describe the current implementation and call out legacy or migration-only behavior explicitly.

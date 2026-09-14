@@ -28,50 +28,28 @@ applied → DC → GC → approved
 
 **Auto-decline**: When an admin approves one application for a post/job, **all other active applications** for the same post/job are automatically set to `auto_declined`. This is handled server-side atomically.
 
-## List Applications
+## Application routes
 
 ```http
-GET /api/v1/applications
+GET /api/v1/posts/:postId/applications
 Authorization: Bearer <clerk_jwt>
 ```
 
-For **providers**: Returns only their own applications.  
-For **admins**: Returns all applications with full details.
+For an authenticated provider, this endpoint reports whether the current user has applied to the post. Admin callers can use it to read the post's applications.
 
-**Query Parameters**:
-
-| Param | Type | Description |
-|---|---|---|
-| `postId` | `string` | Filter by post human-readable ID |
-| `jobId` | `string` | Filter by job human-readable ID |
-| `status` | `string` | Filter by status |
-| `page` | `number` | Page (default: 1) |
-| `limit` | `number` | Per page (default: 20) |
+The route takes the post's human-readable ID in `:postId`; it is not a top-level `/applications` collection endpoint.
 
 **Response 200**:
 ```json
 {
-  "applications": [
-    {
-      "_id": "...",
-      "applicantClerkId": "user_...",
-      "applicantUsername": "teacher1",
-      "postId": "POST-001",
-      "status": "applied",
-      "coverLetter": "I am interested...",
-      "appliedAt": "2026-01-01T00:00:00.000Z",
-      "dcDate": null,
-      "gcDate": null
-    }
-  ],
-  "total": 12
+  "applied": false
 }
 ```
 
 ## Submit Application
 
 ```http
-POST /api/v1/applications
+POST /api/v1/posts/:postId/applications
 Authorization: Bearer <clerk_jwt>
 Content-Type: application/json
 Origin: https://aotf.in
@@ -79,7 +57,7 @@ Origin: https://aotf.in
 
 Providers only. Admins cannot apply on behalf of providers.
 
-**Request Body**:
+**Request Body** (validated by the post application schema):
 ```json
 {
   "postId": "POST-001",
@@ -87,51 +65,44 @@ Providers only. Admins cannot apply on behalf of providers.
 }
 ```
 
-Or for a job:
+The equivalent job route is:
 ```json
+POST /api/v1/jobs/:jobId/applications
+
 {
-  "jobId": "JOB-001",
   "coverLetter": "I am a React developer with 3 years of experience."
 }
 ```
 
 **Validation**:
-- Must provide exactly one of `postId` or `jobId` (not both, not neither)
 - Cannot apply to a post/job with status `closed`, `cancelled`, or `matched`
 - Cannot apply more than once to the same post/job (returns **409**)
 
 **Response 201**: Created application document.
 
-## Get Single Application
+## Get an application
 
 ```http
-GET /api/v1/applications/:applicationId
+GET /api/v1/posts/:postId/applications/:applicationId
 Authorization: Bearer <clerk_jwt>
 ```
 
-Providers can only access their own applications. Admins can access any.
+The equivalent job route is `GET /api/v1/jobs/:jobId/applications/:applicationId`.
 
 **Response 200**: Full application document.
 
-## Update Application Status (Admin)
+## Update application status (admin)
 
 ```http
-PATCH /api/v1/applications/:applicationId
+PATCH /api/v1/posts/:postId/applications/:applicationId
 Authorization: Bearer <admin_clerk_jwt>
 Content-Type: application/json
 Origin: https://aotf.in
 ```
 
-**Permission required**: varies by transition:
+The equivalent job route is `PATCH /api/v1/jobs/:jobId/applications/:applicationId`. The request body accepts the status and relevant scheduling/payment fields; the route enforces the admin permission checks.
 
-| Transition | Permission Required |
-|---|---|
-| `applied` → `DC` | `canCallApplicants` |
-| `DC` → `GC` | `canCallApplicants` |
-| `GC` → `approved` | `canManagePosts` |
-| Any → `decline` | `canManagePosts` |
-
-**Request Body**:
+**Request body example**:
 ```json
 {
   "status": "DC",
@@ -155,22 +126,16 @@ For `approved`:
 5. Provider receives notification email
 6. `CalendarEvent` created for assignment
 
-## Withdraw Application (Provider)
+## Withdraw an application (provider)
 
 ```http
-PATCH /api/v1/applications/:applicationId
+DELETE /api/v1/me/applications/:applicationId
 Authorization: Bearer <clerk_jwt>
 Content-Type: application/json
 Origin: https://aotf.in
 ```
 
-Providers can withdraw their own applications (any status except `approved`):
-
-```json
-{ "status": "withdrawn" }
-```
-
-**Response 200**: Updated application.
+Providers can withdraw only their own application, and only when its current status allows withdrawal. The post/job collection routes also expose `DELETE` for application removal.
 
 ## Application Events
 

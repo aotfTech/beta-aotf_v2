@@ -40,11 +40,9 @@ ADMIN_EMAIL_DOMAIN=aotf.in
 | Variable | Required | Description |
 |---|---|---|
 | `NEXT_PUBLIC_APP_URL` | ✅ | Canonical app URL (used in CSRF check and email links) |
-| `CRON_SECRET` | ✅ (prod cron) | Bearer token for `GET /api/v1/cron/*` routes. Used by Vercel Cron and [Sentry Crons](/docs/how-to/triage-sentry-errors). |
 
 ```bash
 NEXT_PUBLIC_APP_URL=https://aotf.in
-CRON_SECRET=your-random-secret
 ```
 
 ## Razorpay
@@ -69,9 +67,9 @@ RAZORPAY_WEBHOOK_SECRET=...
 
 | Variable | Required | Description |
 |---|---|---|
-| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | ✅ | Cloud name (browser-safe) |
-| `CLOUDINARY_API_KEY` | ✅ | API key |
-| `CLOUDINARY_API_SECRET` | ✅ | API secret |
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Optional | Cloud name when client-side Cloudinary uploads are enabled |
+| `CLOUDINARY_API_KEY` | Optional | Server-side Cloudinary API key |
+| `CLOUDINARY_API_SECRET` | Optional | Server-side Cloudinary API secret |
 
 ```bash
 NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
@@ -85,12 +83,12 @@ CLOUDINARY_API_SECRET=...
 |---|---|---|
 | `GOOGLE_SERVICE_ACCOUNT_EMAIL` | ✅ | Service account email |
 | `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` | ✅ | RSA private key (with literal `\n`) |
-| `GOOGLE_SHEETS_SPREADSHEET_ID` | ✅ | Spreadsheet ID from the URL |
+| `GOOGLE_SHEET_ID` | ✅ for Sheets sync | Spreadsheet ID from the URL |
 
 ```bash
 GOOGLE_SERVICE_ACCOUNT_EMAIL=aotf@project.iam.gserviceaccount.com
 GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\nMII...\n-----END RSA PRIVATE KEY-----\n"
-GOOGLE_SHEETS_SPREADSHEET_ID=1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms
+GOOGLE_SHEET_ID=1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms
 ```
 
 > **Private key formatting**: The key must have literal `\n` characters. Vercel stores them correctly. In `.env.local`, wrap in double quotes.
@@ -100,11 +98,11 @@ GOOGLE_SHEETS_SPREADSHEET_ID=1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms
 | Variable | Required | Description |
 |---|---|---|
 | `RESEND_API_KEY` | ✅ | Resend API key |
-| `RESEND_FROM_EMAIL` | Optional | Sender address (default: `noreply@aotf.in`) |
+| `EMAIL_FROM` | Optional | Sender identity (default is defined in `lib/services/email.service.ts`) |
 
 ```bash
 RESEND_API_KEY=re_...
-RESEND_FROM_EMAIL=noreply@aotf.in
+EMAIL_FROM="AOTF Admin <noreply@aotf.com>"
 ```
 
 ## Sentry (Monitoring)

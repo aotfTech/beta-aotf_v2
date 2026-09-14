@@ -4,6 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import clsx from "clsx";
 import { RootProvider } from "fumadocs-ui/provider/next";
 import { headers } from "next/headers";
+import Script from "next/script";
 
 import { Providers } from "./providers";
 
@@ -74,7 +75,13 @@ export default async function RootLayout({
 
   return (
     <html suppressHydrationWarning lang="en">
-      <head />
+      <head>
+        <Script
+          src="https://cloud.umami.is/script.js"
+          data-website-id="bbf2495e-d085-44a8-a36f-bfcf0f11421d"
+          strategy="afterInteractive"
+        />
+      </head>
       <body
         className={clsx(
           "text-foreground bg-background font-sans antialiased min-h-screen flex flex-col",

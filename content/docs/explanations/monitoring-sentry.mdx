@@ -15,9 +15,8 @@ Sentry gives the team a single place to see what broke, how often, and for whom 
 
 | Goal | How Sentry helps |
 |---|---|
-| Catch unexpected 500s | API routes, webhooks, cron jobs, and the admin UI all report unhandled errors |
+| Catch unexpected 500s | API routes, webhooks, and the admin UI report unhandled errors |
 | Attribute errors to context | Tags like `route`, `layer`, and `feature` narrow down where to look |
-| Monitor scheduled jobs | The `manage-unpaid-users` cron sends check-ins and reports failures |
 | Fix faster | Source-mapped stack traces point to exact file:line; session replay shows what the user did before a client error |
 
 For step-by-step incident response, see [Triage Sentry Errors](/docs/how-to/triage-sentry-errors).
@@ -31,7 +30,6 @@ Sentry org: **`aotf`** · project: **`javascript-nextjs`** · dashboard: [aotf.s
 | **Issues** | Grouped exceptions with stack traces | API 500, webhook processing failure, admin page fetch error |
 | **Performance / Traces** | Slow transactions (sampled) | Slow DB queries or API handlers |
 | **Session Replay** | User session around a client error (sampled) | Admin form submit failure |
-| **Crons** | Missed or failed scheduled jobs | `manage-unpaid-users` daily check-ins |
 | **Users** | Clerk user id attached to events | Set by `SentryUserSync` in `app/providers.tsx` |
 
 ### Sampling vs errors
@@ -60,7 +58,6 @@ flowchart TD
     Proxy[proxy.ts]
     API[API routes via handleApiError]
     Webhooks[Clerk and Razorpay webhooks]
-    Cron[manage-unpaid-users cron]
   end
   subgraph helpers [Reporting helpers]
     ReportError[lib/sentry-report.ts]
@@ -76,7 +73,6 @@ flowchart TD
   Proxy --> ReportError
   API --> ReportError
   Webhooks --> ReportError
-  Cron --> ReportError
   ReportError --> SentryCloud
   ClientReport --> SentryCloud
   Config --> SentryCloud
@@ -115,21 +111,13 @@ Reporting is **pattern-based** across the codebase — not a per-file inventory.
 ### Server
 
 - `handleApiError()` in `lib/api-utils.ts` — catch-all 500 path calls `reportError(error, { route: context })`
-- Direct `reportError()` in routes that need custom context (webhooks, proxy, cron)
+- Direct `reportError()` in routes that need custom context (webhooks, proxy)
 - `proxy.ts` — auth/routing failures in four catch blocks
 
 ### Client
 
 - `reportClientError()` in admin pages and shared components (forms, dashboards, cards)
 - Skips HTTP 4xx responses and operational errors via `shouldReportToSentry()`
-
-### Cron monitoring
-
-The daily unpaid-user job at `GET /api/v1/cron/manage-unpaid-users` reports check-ins to Sentry Crons:
-
-- Monitor slug: `manage-unpaid-users`
-- Schedule: `30 21 * * *` (21:30 UTC daily)
-- Uses `Sentry.captureCheckIn` for in-progress, success, and error states
 
 ## What Is Intentionally Not Reported
 
