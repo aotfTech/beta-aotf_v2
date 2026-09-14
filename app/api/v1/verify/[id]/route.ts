@@ -86,7 +86,13 @@ async function get(
       { status: 404 },
     );
   }
-  const subjectDocs = await Subject.find({ key: { $in: profile.subjects ?? [] } }, { key: 1, label: 1 }).lean();
+  const profileSubjectKeys = profile.subjects ?? [];
+  const subjectDocs = profileSubjectKeys.length
+    ? await Subject.find(
+        { $or: profileSubjectKeys.map((key) => ({ key })) },
+        { key: 1, label: 1 },
+      ).lean()
+    : [];
   const subjectLabels = new Map(subjectDocs.map((subject) => [subject.key, subject.label]));
 
   const user = await User.findOne(

@@ -29,6 +29,7 @@ export async function PATCH(req: Request) {
       jobExp,
       qualification,
       board,
+      gender,
       subjects,
       plan,
     } = body as {
@@ -39,6 +40,7 @@ export async function PATCH(req: Request) {
       jobExp?: string;
       qualification?: string;
       board?: string;
+      gender?: string;
       subjects?: string[];
       plan?: string;
     };
@@ -102,6 +104,17 @@ export async function PATCH(req: Request) {
       );
     }
 
+    const normalizedGender = gender?.trim().toLowerCase();
+    if (
+      normalizedGender !== undefined &&
+      !["male", "female", "other"].includes(normalizedGender)
+    ) {
+      return NextResponse.json(
+        { error: "Invalid gender value" },
+        { status: 400 },
+      );
+    }
+
     await dbConnect();
 
     if (subjects !== undefined) {
@@ -109,7 +122,9 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ error: "Select at least one subject" }, { status: 400 });
       }
       const uniqueSubjects = [...new Set(subjects)];
-      const count = await Subject.countDocuments({ key: { $in: uniqueSubjects } });
+      const count = await Subject.countDocuments({
+        $or: uniqueSubjects.map((key) => ({ key })),
+      });
       if (count !== uniqueSubjects.length) {
         return NextResponse.json({ error: "One or more subjects are invalid" }, { status: 400 });
       }
@@ -126,6 +141,7 @@ export async function PATCH(req: Request) {
     if (jobExp !== undefined) updateFields.jobExp = jobExp;
     if (qualification !== undefined) updateFields.qualification = qualification;
     if (board !== undefined) updateFields.board = board;
+    if (normalizedGender !== undefined) updateFields.gender = normalizedGender;
     if (subjects !== undefined) updateFields.subjects = subjects;
     if (plan !== undefined) updateFields.plan = plan;
     // Refresh the 72-hour TTL on every save while payment hasn't happened
@@ -136,11 +152,21 @@ export async function PATCH(req: Request) {
     const onboardingDetails = await OnboardingDetails.findOneAndUpdate(
       { clerkId },
       { $set: updateFields },
-      { new: true, upsert: true, setDefaultsOnInsert: true },
+      {
+        returnDocument: "after",
+        upsert: true,
+        setDefaultsOnInsert: true,
+      },
     );
 
-    if (subjects !== undefined) {
-      await Profile.updateOne({ clerkId }, { $set: { subjects } });
+    const profileUpdate: Record<string, unknown> = {};
+    if (subjects !== undefined) profileUpdate.subjects = subjects;
+    if (normalizedGender !== undefined) profileUpdate.gender = normalizedGender;
+    if (Object.keys(profileUpdate).length > 0) {
+      await Profile.updateOne({ clerkId }, { $set: profileUpdate });
+    }
+    if (normalizedGender !== undefined) {
+      await User.updateOne({ clerkId }, { $set: { gender: normalizedGender } });
     }
 
     console.log(`[onboarding] Upserted onboarding details for ${clerkId}`);

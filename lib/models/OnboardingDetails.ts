@@ -33,6 +33,11 @@ const onboardingDetailsSchema = new Schema(
       default: null,
       enum: ["CBSE", "ICSE", "ISC", "IB", "WB-Bengali", "WB-English", null],
     },
+    gender: {
+      type: String,
+      default: null,
+      enum: ["male", "female", "other", null],
+    },
     subjects: { type: [String], default: [] },
     plan: {
       type: String,

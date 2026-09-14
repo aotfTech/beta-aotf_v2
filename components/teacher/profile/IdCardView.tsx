@@ -125,6 +125,8 @@ export function IdCard({ data }: { data: IdCardData }) {
               showAnchorIcon
               className="text-white"
               href={`${verifyBaseUrl}/verify/${encodeURIComponent(data.uniqId)}`}
+              target="_blank"
+              rel="noopener noreferrer"
             >
               {data.name}
             </Link>

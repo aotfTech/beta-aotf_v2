@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model, models } from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface ISource extends Document {
   key: string;
@@ -15,6 +15,7 @@ const SourceSchema = new Schema<ISource>(
   { timestamps: true }
 );
 
-const Source: Model<ISource> = models.Source || mongoose.model<ISource>("Source", SourceSchema);
+const Source: Model<ISource> =
+  mongoose.models.Source || mongoose.model<ISource>("Source", SourceSchema);
 
 export default Source;

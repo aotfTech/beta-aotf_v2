@@ -623,9 +623,9 @@ export default function Onboarding() {
   const selectedPlan = PLANS.find((p) => p.value === formData.plan);
   const isStepAvailable = (step: number) =>
     step === 1
-      ? !onboardingFlags.detailsCompleted
+      ? !onboardingFlags.paymentCompleted
       : step === 2
-        ? !onboardingFlags.detailsCompleted && !onboardingFlags.paymentCompleted
+        ? !onboardingFlags.paymentCompleted
         : step === 3
           ? !onboardingFlags.paymentCompleted
           : !onboardingFlags.whatsappGroupCompleted;

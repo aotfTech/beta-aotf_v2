@@ -137,7 +137,9 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ error: "Select at least one subject" }, { status: 400 });
       }
       const uniqueSubjects = [...new Set(subjects)];
-      const count = await Subject.countDocuments({ key: { $in: uniqueSubjects } });
+      const count = await Subject.countDocuments({
+        $or: uniqueSubjects.map((key) => ({ key })),
+      });
       if (count !== uniqueSubjects.length) {
         return NextResponse.json({ error: "One or more subjects are invalid" }, { status: 400 });
       }
@@ -161,7 +163,7 @@ export async function PATCH(req: Request) {
           username: user.username,
         },
       },
-      { new: true, upsert: true },
+      { returnDocument: "after", upsert: true },
     );
 
     if (!profile) {
@@ -170,10 +172,13 @@ export async function PATCH(req: Request) {
 
     console.log(`[profile] Updated profile for ${clerkId}`);
 
-    const subjectDocs = await Subject.find(
-      { key: { $in: profile.subjects ?? [] } },
-      { key: 1, label: 1 },
-    ).lean();
+    const profileSubjectKeys = profile.subjects ?? [];
+    const subjectDocs = profileSubjectKeys.length
+      ? await Subject.find(
+          { $or: profileSubjectKeys.map((key) => ({ key })) },
+          { key: 1, label: 1 },
+        ).lean()
+      : [];
     const labels = new Map(subjectDocs.map((subject) => [subject.key, subject.label]));
     const profileResponse = profile.toObject();
     return NextResponse.json({

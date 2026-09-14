@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model, models } from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface ISubject extends Document {
   key: string;
@@ -15,6 +15,7 @@ const SubjectSchema = new Schema<ISubject>(
   { timestamps: true }
 );
 
-const Subject: Model<ISubject> = models.Subject || mongoose.model<ISubject>("Subject", SubjectSchema);
+const Subject: Model<ISubject> =
+  mongoose.models.Subject || mongoose.model<ISubject>("Subject", SubjectSchema);
 
 export default Subject;

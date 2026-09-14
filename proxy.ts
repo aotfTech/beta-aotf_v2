@@ -22,6 +22,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/v1/jobs(.*)",
   "/api/v1/renowned-teachers(.*)",
   "/api/v1/reviews(.*)",
+  "/api/v1/subjects(.*)", // Subject catalogue is public for onboarding/profile forms
   "/api/v1/verify(.*)",
   "/about(.*)",
   "/contact(.*)",
