@@ -5,6 +5,7 @@ import dbConnect from "@/lib/db";
 import Profile from "@/lib/models/Profile";
 import User from "@/lib/models/User";
 import { ensureUserRecord } from "@/lib/utils/ensure-user";
+import Subject from "@/lib/models/Subject";
 
 export async function PATCH(req: Request) {
   try {
@@ -26,6 +27,7 @@ export async function PATCH(req: Request) {
       "qualification",
       "board",
       "gender",
+      "subjects",
     ]);
     const unsupportedField = Object.keys(body).find(
       (field) => !editableFields.has(field),
@@ -48,6 +50,7 @@ export async function PATCH(req: Request) {
       qualification,
       board,
       gender,
+      subjects,
     } = body as {
       phone?: string;
       whatsapp?: string;
@@ -57,6 +60,7 @@ export async function PATCH(req: Request) {
       qualification?: string;
       board?: string;
       gender?: string;
+      subjects?: string[];
     };
 
     // Validate phone / whatsapp (10-digit Indian mobile)
@@ -128,6 +132,17 @@ export async function PATCH(req: Request) {
     if (qualification !== undefined) updateFields.qualification = qualification;
     if (board !== undefined) updateFields.board = board;
     if (normalizedGender !== undefined) updateFields.gender = normalizedGender;
+    if (subjects !== undefined) {
+      if (!Array.isArray(subjects) || subjects.length === 0 || subjects.length > 20) {
+        return NextResponse.json({ error: "Select at least one subject" }, { status: 400 });
+      }
+      const uniqueSubjects = [...new Set(subjects)];
+      const count = await Subject.countDocuments({ key: { $in: uniqueSubjects } });
+      if (count !== uniqueSubjects.length) {
+        return NextResponse.json({ error: "One or more subjects are invalid" }, { status: 400 });
+      }
+      updateFields.subjects = uniqueSubjects;
+    }
 
     // Ensure User + Profile exist (self-heals if the Clerk webhook was delayed)
     const user = await ensureUserRecord(clerkId);
@@ -155,7 +170,20 @@ export async function PATCH(req: Request) {
 
     console.log(`[profile] Updated profile for ${clerkId}`);
 
-    return NextResponse.json({ success: true, profile });
+    const subjectDocs = await Subject.find(
+      { key: { $in: profile.subjects ?? [] } },
+      { key: 1, label: 1 },
+    ).lean();
+    const labels = new Map(subjectDocs.map((subject) => [subject.key, subject.label]));
+    const profileResponse = profile.toObject();
+    return NextResponse.json({
+      success: true,
+      profile: {
+        ...profileResponse,
+        subjectKeys: profile.subjects,
+        subjects: (profile.subjects ?? []).map((subject) => labels.get(subject) ?? subject),
+      },
+    });
   } catch (error) {
     return handleApiError(error, "PATCH /api/v1/profile");
   }

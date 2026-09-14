@@ -7,6 +7,8 @@ import Payment from "@/lib/models/Payment";
 import OnboardingDetails from "@/lib/models/OnboardingDetails";
 import { ensureUserRecord } from "@/lib/utils/ensure-user";
 import { syncUserMetadataToClerk } from "@/lib/services/clerk-sync.service";
+import Profile from "@/lib/models/Profile";
+import Subject from "@/lib/models/Subject";
 
 export async function PATCH(req: Request) {
   try {
@@ -27,6 +29,7 @@ export async function PATCH(req: Request) {
       jobExp,
       qualification,
       board,
+      subjects,
       plan,
     } = body as {
       phone?: string;
@@ -36,6 +39,7 @@ export async function PATCH(req: Request) {
       jobExp?: string;
       qualification?: string;
       board?: string;
+      subjects?: string[];
       plan?: string;
     };
 
@@ -100,6 +104,17 @@ export async function PATCH(req: Request) {
 
     await dbConnect();
 
+    if (subjects !== undefined) {
+      if (!Array.isArray(subjects) || subjects.length === 0 || subjects.length > 20) {
+        return NextResponse.json({ error: "Select at least one subject" }, { status: 400 });
+      }
+      const uniqueSubjects = [...new Set(subjects)];
+      const count = await Subject.countDocuments({ key: { $in: uniqueSubjects } });
+      if (count !== uniqueSubjects.length) {
+        return NextResponse.json({ error: "One or more subjects are invalid" }, { status: 400 });
+      }
+    }
+
     // Ensure User + Profile exist (self-heals if the Clerk webhook was delayed)
     const user = await ensureUserRecord(clerkId);
 
@@ -111,6 +126,7 @@ export async function PATCH(req: Request) {
     if (jobExp !== undefined) updateFields.jobExp = jobExp;
     if (qualification !== undefined) updateFields.qualification = qualification;
     if (board !== undefined) updateFields.board = board;
+    if (subjects !== undefined) updateFields.subjects = subjects;
     if (plan !== undefined) updateFields.plan = plan;
     // Refresh the 72-hour TTL on every save while payment hasn't happened
     updateFields.expiresAt = user.paymentCompleted
@@ -123,6 +139,10 @@ export async function PATCH(req: Request) {
       { new: true, upsert: true, setDefaultsOnInsert: true },
     );
 
+    if (subjects !== undefined) {
+      await Profile.updateOne({ clerkId }, { $set: { subjects } });
+    }
+
     console.log(`[onboarding] Upserted onboarding details for ${clerkId}`);
 
     // Mark detailsCompleted on the User if all required fields are present
@@ -131,7 +151,8 @@ export async function PATCH(req: Request) {
       !!onboardingDetails?.whatsapp &&
       !!onboardingDetails?.teachingExp &&
       !!onboardingDetails?.qualification &&
-      !!onboardingDetails?.board;
+      !!onboardingDetails?.board &&
+      (onboardingDetails?.subjects?.length ?? 0) > 0;
 
     let userDoc = await User.findOne({ clerkId });
     if (allRequiredFilled) {
@@ -168,7 +189,7 @@ export async function GET() {
 
     await dbConnect();
 
-    const [onboardingDetails, userDoc] = await Promise.all([
+    const [onboardingDetails, userDoc, profile] = await Promise.all([
       OnboardingDetails.findOne({ clerkId }),
       User.findOne(
         { clerkId },
@@ -183,6 +204,7 @@ export async function GET() {
           createdByAdmin: 1,
         },
       ),
+      Profile.findOne({ clerkId }, { subjects: 1 }).lean(),
     ]);
 
     // Check if the user has a paid payment but onboardingCompleted is still false
@@ -199,6 +221,7 @@ export async function GET() {
 
     return NextResponse.json({
       onboardingDetails,
+      subjects: profile?.subjects ?? onboardingDetails?.subjects ?? [],
       createdAt: userDoc?.createdAt ?? null,
       onboardingCompleted: userDoc?.onboardingCompleted ?? false,
       detailsCompleted: userDoc?.detailsCompleted ?? false,

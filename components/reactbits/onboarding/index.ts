@@ -4,6 +4,7 @@ export { default as ExperienceField } from "./ExperienceField";
 export { default as QualificationField } from "./QualificationField";
 export { default as BoardField } from "./BoardField";
 export { default as GenderField } from "./GenderField";
+export { default as SubjectSelector } from "@/components/teacher/profile/SubjectSelector";
 export { default as PlanSelection } from "./PlanSelection";
 export { default as PaymentStep } from "./PaymentStep";
 export { PLANS, EXPERIENCE_OPTIONS, BOARD_OPTIONS, onboardingStep1Schema, validateField } from "./types";

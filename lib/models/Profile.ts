@@ -26,6 +26,8 @@ const profileSchema = new Schema(
     location: { type: String, default: null },
     websiteUrl: { type: String, default: null },
     socialLinks: { type: socialLinksSchema, default: () => ({}) },
+    // Subject keys, not labels. This lets admin label changes flow through
+    // automatically to every teacher profile.
     subjects: { type: [String], default: [] },
     experience: { type: Number, default: null },
     isPublic: { type: Boolean, default: true },

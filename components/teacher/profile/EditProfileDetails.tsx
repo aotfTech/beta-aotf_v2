@@ -17,6 +17,7 @@ import ExperienceField from "@/components/reactbits/onboarding/ExperienceField";
 import QualificationField from "@/components/reactbits/onboarding/QualificationField";
 import BoardField from "@/components/reactbits/onboarding/BoardField";
 import GenderField from "@/components/reactbits/onboarding/GenderField";
+import SubjectSelector from "@/components/teacher/profile/SubjectSelector";
 import {
   onboardingStep1Schema,
   type OnboardingStep1Values,
@@ -31,6 +32,8 @@ export interface EditableProfileDetails {
   qualification: string | null;
   board: string | null;
   gender: string | null;
+  subjects: string[];
+  subjectKeys?: string[];
 }
 
 type ProfileUpdate = Omit<OnboardingStep1Values, "jobExp"> & {
@@ -54,6 +57,7 @@ function toForm(details: EditableProfileDetails): ProfileUpdate {
     gender: details.gender
       ? details.gender.charAt(0).toUpperCase() + details.gender.slice(1)
       : "",
+    subjects: details.subjectKeys ?? details.subjects,
   };
 }
 
@@ -68,6 +72,9 @@ export default function EditProfileDetails({
   );
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [selectedSubjects, setSelectedSubjects] = useState<string[]>(
+    details.subjectKeys ?? details.subjects,
+  );
 
   useEffect(() => {
     if (isOpen) {
@@ -122,6 +129,7 @@ export default function EditProfileDetails({
           qualification: form.qualification,
           board: form.board,
           gender: form.gender,
+          subjects: selectedSubjects,
         }),
       });
       const data = (await response.json().catch(() => ({}))) as {
@@ -132,7 +140,7 @@ export default function EditProfileDetails({
         throw new Error(data.error ?? "Unable to update your profile.");
       }
 
-      onSaved(data.profile);
+        onSaved({ ...details, ...data.profile, subjectKeys: selectedSubjects });
       onClose();
     } catch (saveError) {
       setError(
@@ -198,6 +206,11 @@ export default function EditProfileDetails({
             <GenderField
               value={form.gender}
               onChange={(value) => update("gender", value)}
+            />
+            <SubjectSelector
+              value={selectedSubjects}
+              isRequired
+              onChange={setSelectedSubjects}
             />
             {error && <p className="text-sm text-danger">{error}</p>}
           </ModalBody>

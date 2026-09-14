@@ -55,6 +55,7 @@ interface ProfileData {
   location: string | null;
   websiteUrl: string | null;
   subjects: string[];
+  subjectKeys?: string[];
   experience: number | null;
   phone: string | null;
   whatsapp: string | null;

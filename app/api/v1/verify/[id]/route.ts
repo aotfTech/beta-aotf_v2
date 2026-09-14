@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { clerkClient } from "@clerk/nextjs/server";
 import dbConnect from "@/lib/db";
 import Profile from "@/lib/models/Profile";
+import Subject from "@/lib/models/Subject";
 import User from "@/lib/models/User";
 import { formatDisplayDate } from "@/lib/utils/display-date";
 import { withApiErrorHandling } from "@/lib/api-utils";
@@ -85,6 +86,8 @@ async function get(
       { status: 404 },
     );
   }
+  const subjectDocs = await Subject.find({ key: { $in: profile.subjects ?? [] } }, { key: 1, label: 1 }).lean();
+  const subjectLabels = new Map(subjectDocs.map((subject) => [subject.key, subject.label]));
 
   const user = await User.findOne(
     { _id: profile.userId },
@@ -147,7 +150,7 @@ async function get(
     bio: profile.bio,
     photo: accountAvatar || "/AOTF.svg",
     qualification: profile.qualification,
-    subjects: profile.subjects,
+    subjects: (profile.subjects ?? []).map((subject) => subjectLabels.get(subject) ?? subject),
     employeeId: `AOTF-${isCandidateId ? "C" : "T"}-${profile.username.toUpperCase()}`,
     phone: formatMaskedPhone(`${profile.phone}`),
     location: profile.location || profile.address,

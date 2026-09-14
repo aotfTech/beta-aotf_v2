@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
 import Profile from "@/lib/models/Profile";
+import Subject from "@/lib/models/Subject";
 import User from "@/lib/models/User";
 import { withApiErrorHandling } from "@/lib/api-utils";
 
@@ -29,6 +30,8 @@ async function get(
   if (!profile) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
+  const subjectDocs = await Subject.find({ key: { $in: profile.subjects ?? [] } }, { key: 1, label: 1 }).lean();
+  const subjectLabels = new Map(subjectDocs.map((subject) => [subject.key, subject.label]));
 
   const user = await User.findOne(
     { _id: profile.userId },
@@ -48,7 +51,8 @@ async function get(
       location: profile.location,
       websiteUrl: profile.websiteUrl,
       socialLinks: profile.socialLinks,
-      subjects: profile.subjects,
+      subjects: (profile.subjects ?? []).map((subject) => subjectLabels.get(subject) ?? subject),
+      subjectKeys: profile.subjects,
       experience: profile.experience,
       phone: profile.phone,
       whatsapp: profile.whatsapp,

@@ -10,6 +10,7 @@ import {
   QualificationField,
   BoardField,
   GenderField,
+  SubjectSelector,
   PlanSelection,
   PaymentStep,
   PLANS,
@@ -67,6 +68,7 @@ export default function Onboarding() {
     qualification: "",
     board: "",
     gender: "",
+    subjects: [],
     plan: "",
   });
 
@@ -119,6 +121,7 @@ export default function Onboarding() {
         (
           data: {
             onboardingDetails?: Record<string, string | null>;
+            subjects?: string[];
             createdAt?: string | null;
             onboardingCompleted?: boolean;
             detailsCompleted?: boolean;
@@ -170,6 +173,7 @@ export default function Onboarding() {
                 qualification: d.qualification ?? prev.qualification,
                 board: d.board ?? prev.board,
                 gender: d.gender ?? prev.gender,
+                subjects: data?.subjects ?? prev.subjects,
                 plan: (d.plan as PlanValue) ?? prev.plan,
               };
             });
@@ -326,6 +330,7 @@ export default function Onboarding() {
           qualification: formData.qualification,
           board: formData.board,
           gender: formData.gender,
+          subjects: formData.subjects,
         }),
       });
       if (!res.ok) {
@@ -377,6 +382,7 @@ export default function Onboarding() {
           qualification: formData.qualification,
           board: formData.board,
           gender: formData.gender,
+          subjects: formData.subjects,
           ...(planValue ? { plan: planValue } : {}),
         }),
       });
@@ -429,6 +435,7 @@ export default function Onboarding() {
         qualification: formData.qualification,
         board: formData.board,
         gender: formData.gender,
+        subjects: formData.subjects,
       });
       return result.success;
     }
@@ -749,6 +756,15 @@ export default function Onboarding() {
                   <GenderField
                     value={formData.gender}
                     onChange={(v) => handleChange("gender", v)}
+                  />
+                  <SubjectSelector
+                    value={formData.subjects}
+                    isRequired
+                    onChange={(subjects) => {
+                      setFormData((prev) => ({ ...prev, subjects }));
+                      setProfileSaved(false);
+                      setOnboardingDetailsSaved(false);
+                    }}
                   />
                 </div>
               </Step>
