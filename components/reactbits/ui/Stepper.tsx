@@ -14,6 +14,7 @@ import { ArrowLeft, ArrowRight, CheckCheck } from "lucide-react";
 interface StepperProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
   initialStep?: number;
+  step?: number;
   onStepChange?: (step: number) => void;
   onFinalStepCompleted?: () => void;
   validateStep?: (step: number) => boolean;
@@ -39,6 +40,7 @@ interface StepperProps extends HTMLAttributes<HTMLDivElement> {
 export default function Stepper({
   children,
   initialStep = 1,
+  step: controlledStep,
   onStepChange = () => {},
   onFinalStepCompleted = () => {},
   validateStep,
@@ -56,8 +58,16 @@ export default function Stepper({
   renderStepIndicator,
   ...rest
 }: StepperProps) {
-  const [currentStep, setCurrentStep] = useState<number>(initialStep);
+  const [currentStep, setCurrentStep] = useState<number>(controlledStep ?? initialStep);
   const [direction, setDirection] = useState<number>(0);
+  
+  React.useEffect(() => {
+    if (controlledStep !== undefined && controlledStep !== currentStep) {
+      setDirection(controlledStep > currentStep ? 1 : -1);
+      setCurrentStep(controlledStep);
+    }
+  }, [controlledStep, currentStep]);
+
   const stepsArray = Children.toArray(children);
   const totalSteps = stepsArray.length;
   const isCompleted = currentStep > totalSteps;

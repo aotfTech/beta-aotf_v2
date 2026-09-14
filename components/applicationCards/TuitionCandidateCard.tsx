@@ -25,10 +25,13 @@ export interface Candidate {
   avatar?: string;
   status:
     | "applied"
+    | "pending"
+    | "shortlisted"
     | "DC"
     | "GC"
     | "approved"
     | "decline"
+    | "declined"
     | "auto_declined"
     | "withdrawn";
   appliedDate: string;
@@ -59,6 +62,8 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
   ): "default" | "primary" | "secondary" | "success" | "warning" | "danger" => {
     switch (status) {
       case "applied":
+      case "pending":
+      case "shortlisted":
         return "warning";
       case "DC":
         return "primary";
@@ -67,6 +72,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
       case "approved":
         return "success";
       case "decline":
+      case "declined":
       case "auto_declined":
         return "danger";
       case "withdrawn":
@@ -80,6 +86,10 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
     switch (status) {
       case "applied":
         return "Applied";
+      case "pending":
+        return "Pending";
+      case "shortlisted":
+        return "Shortlisted";
       case "DC":
         return "Demo ✅";
       case "GC":
@@ -87,6 +97,7 @@ export const CandidateCard: React.FC<CandidateCardProps> = ({
       case "approved":
         return "Approved ✅";
       case "decline":
+      case "declined":
         return "Declined ❌";
       case "auto_declined":
         return "Auto Declined ❌";

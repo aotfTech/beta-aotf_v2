@@ -276,9 +276,13 @@ export default function ViewPostPage({
     const approved = candidates.filter((c) => c.status === "approved");
     const inDC = candidates.filter((c) => c.status === "DC");
     const inGC = candidates.filter((c) => c.status === "GC");
-    const applied = candidates.filter((c) => c.status === "applied");
+    
+    // applied encompasses all non-processed active statuses
+    const pendingStatuses = ["applied", "pending", "shortlisted"];
+    const applied = candidates.filter((c) => pendingStatuses.includes(c.status));
+    
     const declined = candidates.filter(
-      (c) => c.status === "decline" || c.status === "auto_declined",
+      (c) => c.status === "decline" || c.status === "declined" || c.status === "auto_declined",
     );
     const withdrawn = candidates.filter((c) => c.status === "withdrawn");
 
@@ -288,15 +292,14 @@ export default function ViewPostPage({
 
     if (hasApproved) {
       // If someone is approved, all others go to declined
-      waitingListLabel = "Declined Applicants";
+      waitingListLabel = "Declined / Other Applicants";
       waitingListCandidates = [
         ...applied,
         ...inDC.filter((c) => c.id !== approved[0]?.id),
         ...inGC.filter((c) => c.id !== approved[0]?.id),
         ...declined,
       ];
-    } else if (hasDC || hasGC) {
-      // If someone is in DC/GC, others are in waiting
+    } else {
       waitingListLabel = "Waiting List";
       waitingListCandidates = [...applied];
     }
@@ -649,8 +652,8 @@ export default function ViewPostPage({
 
             {/* Waiting List / Declined List */}
             {categorizedCandidates.waitingListCandidates.length > 0 && (
-              <div>
-                <Accordion className="underlined">
+              <div className="space-y-6">
+                <Accordion className="underlined" defaultExpandedKeys={["1"]}>
                   <AccordionItem
                     key="1"
                     aria-label={categorizedCandidates.waitingListLabel}
@@ -694,6 +697,38 @@ export default function ViewPostPage({
                     </div>
                   </AccordionItem>
                 </Accordion>
+                
+                {/* Independent Declined List when no one is approved */}
+                {!categorizedCandidates.hasApproved && categorizedCandidates.declined.length > 0 && (
+                  <Accordion className="underlined" defaultExpandedKeys={["declined"]}>
+                    <AccordionItem
+                      key="declined"
+                      aria-label="Declined Applicants"
+                      title={
+                        <div className="flex items-center gap-2">
+                          <XCircle size={20} className="text-danger" />
+                          <span className="font-semibold">Declined Applicants</span>
+                          <Chip size="sm" color="danger" variant="flat">
+                            {categorizedCandidates.declined.length}
+                          </Chip>
+                        </div>
+                      }
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {categorizedCandidates.declined.map((candidate) => (
+                          <CandidateCard
+                            key={candidate.id}
+                            candidate={candidate}
+                            onViewDetails={handleViewDetails}
+                            selectionMode={selectionMode}
+                            isSelected={selectedIds.has(candidate.id)}
+                            onSelectionChange={handleSelectionChange}
+                          />
+                        ))}
+                      </div>
+                    </AccordionItem>
+                  </Accordion>
+                )}
               </div>
             )}
 

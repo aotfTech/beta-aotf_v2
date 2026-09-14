@@ -224,13 +224,13 @@ export default function AdminReviewsPage() {
         <CardBody className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <Select
+              size="sm"
               label="Status"
               selectedKeys={statusFilter ? [statusFilter] : []}
               onSelectionChange={(keys) => {
                 const v = Array.from(keys)[0] as any;
                 setStatusFilter(v || "");
               }}
-              className="max-w-xs"
             >
               <SelectItem key="active">Active</SelectItem>
               <SelectItem key="hidden">Hidden</SelectItem>

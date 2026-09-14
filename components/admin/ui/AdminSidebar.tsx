@@ -95,7 +95,6 @@ const NAV_ITEMS: NavItem[] = [
     href: "/admin/teacher-reviews",
     label: "Teacher Reviews",
     icon: Star,
-    permission: "canManageTeacherReviews",
   },
   { href: "/admin/ads", label: "Ads", icon: Megaphone },
   { href: "/admin/invoices", label: "Invoices", icon: FileText },

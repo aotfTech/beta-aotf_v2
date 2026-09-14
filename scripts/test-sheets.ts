@@ -1,6 +1,7 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
 
-import { getGoogleSheetsClient } from "../lib/googleSheets";
+import { getGoogleSheetsClient, ensureTabExists } from "../lib/googleSheets";
 
 /**
  * Simple local test for Google Sheets service account auth.
@@ -14,12 +15,15 @@ import { getGoogleSheetsClient } from "../lib/googleSheets";
  * - GOOGLE_SHEET_TEST_TAB (default: "PostLedger")
  */
 async function main() {
-  const spreadsheetId = "1dkLzzjqZbs0nZHLYGpGNFp8PCwJfjT2AvqsUtVzsDJ4";
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID || "1dkLzzjqZbs0nZHLYGpGNFp8PCwJfjT2AvqsUtVzsDJ4";
   if (!spreadsheetId) throw new Error("Missing env var: GOOGLE_SHEET_ID");
 
-  const tab = "Sheet1";
+  const tab = process.env.GOOGLE_SHEET_TEST_TAB || "Sheet1";
 
   const sheets = await getGoogleSheetsClient();
+  
+  // Ensure the tab exists before trying to read or write to it
+  await ensureTabExists(sheets, spreadsheetId, tab);
 
   // 1) Read A1
   const readRange = `${tab}!A1:B2`;

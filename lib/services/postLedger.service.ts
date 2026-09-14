@@ -7,6 +7,7 @@ import Profile from "@/lib/models/Profile";
 import Application from "@/lib/models/Application";
 import Admin from "@/lib/models/Admin";
 import Invoice from "@/lib/models/Invoice";
+import Referral from "@/lib/models/Referral";
 import PostLedger, {
   type IPostLedger,
   type IPostLedgerStatusHistoryEntry,
@@ -24,14 +25,15 @@ export const TUITIONS_TAB = "Tuitions";
 export const TUITIONS_HEADERS = [
   "Serial No",          // A
   "Date",               // B
-  "Tuition Serial No",  // C — same as Serial No (kept for legacy compat)
-  "Tuition ID",         // D
-  "Cancelled?",         // E
-  "Guardian Name",      // F
-  "Guardian Phone",     // G
-  "Source",             // H
-  "Requirement",        // I
-  "Notes",              // J
+  "Tuition ID",         // C
+  "Cancelled?",         // D
+  "Guardian Name",      // E
+  "Guardian Phone",     // F
+  "Source",             // G
+  "Referrer Name",      // H
+  "Referrer Phone",     // I
+  "Requirement",        // J
+  "Notes",              // K
   "Paid?",              // K
   "Payment Date",       // L
   "Teacher Assigned?",  // M
@@ -90,6 +92,8 @@ interface IPostLedgerUpsertData {
   // New fields
   assignedTeacherStatus: string | null;
   source: string | null;
+  referrerName: string | null;
+  referrerPhone: string | null;
   cancelledOrNot: boolean;
   requirement: string | null;
   teacherGender: string | null;
@@ -152,6 +156,19 @@ export function formatDateIST(date: Date | null | undefined): string {
   return `${day}/${month}/${year} ${hour}:${minute}`;
 }
 
+export function formatDateOnlyIST(date: Date | null | undefined): string {
+  if (!date) return "";
+
+  const dtf = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
+  return dtf.format(date);
+}
+
 /** Build a human-readable requirement summary from PostLedger students */
 function buildRequirementSummary(students: IPostLedgerStudent[]): string {
   return students
@@ -171,25 +188,28 @@ export function postLedgerToSheetRowValues(
     // B: Date (post created at)
     formatDateIST(ledger.postCreatedAt),
 
-    // C: Tuition Serial No (same as A — kept for sheet readability)
-    ledger.serialNumber ?? "",
-
-    // D: Tuition ID
+    // C: Tuition ID
     ledger.postId,
 
-    // E: Cancelled?
+    // D: Cancelled?
     ledger.cancelledOrNot ? "YES" : "NO",
 
-    // F: Guardian Name
+    // E: Guardian Name
     ledger.guardianName,
 
-    // G: Guardian Phone
+    // F: Guardian Phone
     ledger.guardianPhone,
 
-    // H: Source
+    // G: Source
     ledger.source ?? "",
 
-    // I: Requirement
+    // H: Referrer Name
+    ledger.referrerName ?? "",
+
+    // I: Referrer Phone
+    ledger.referrerPhone ?? "",
+
+    // J: Requirement
     ledger.requirement ?? "",
 
     // J: Notes
@@ -199,7 +219,7 @@ export function postLedgerToSheetRowValues(
     ledger.paymentStatus,
 
     // L: Payment Date
-    formatDateIST(ledger.paymentDate),
+    formatDateOnlyIST(ledger.paymentDate),
 
     // M: Teacher Assigned?
     ledger.assignedTeacherId ? "YES" : "NO",
@@ -283,7 +303,7 @@ export async function syncPostLedgerRowToSheet(ledger: IPostLedger): Promise<voi
     const sheets = await getGoogleSheetsClient();
     await ensureTabExists(sheets, spreadsheetId, TUITIONS_TAB, TUITIONS_HEADERS);
     const rowValues = postLedgerToSheetRowValues(ledger);
-    const lastCol = "AC";
+    const lastCol = "AD";
 
     // For Tuitions, the row index is always serialNumber + 1 (to preserve header at row 1).
     // If serialNumber is somehow missing, fallback to sheetRowIndex, but this should be rare.
@@ -382,6 +402,17 @@ export async function upsertPostLedger(postId: string): Promise<IPostLedger> {
   }
   
   const source: string | null = post.source ?? null;
+
+  let referrerName: string | null = null;
+  let referrerPhone: string | null = null;
+
+  if (source === "referral") {
+    const referral = await Referral.findOne({ postId }).lean<{ referralUserName?: string; referralPhoneNumber?: string }>();
+    if (referral) {
+      referrerName = referral.referralUserName ?? null;
+      referrerPhone = referral.referralPhoneNumber ?? null;
+    }
+  }
 
   const existingLedger = await PostLedger.findOne({ postId }).lean<IPostLedger>();
 
@@ -534,6 +565,8 @@ export async function upsertPostLedger(postId: string): Promise<IPostLedger> {
     processedByAdminName,
     assignedTeacherStatus,
     source,
+    referrerName,
+    referrerPhone,
     cancelledOrNot,
     requirement,
     teacherGender,

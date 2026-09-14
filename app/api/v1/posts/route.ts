@@ -18,7 +18,7 @@ import { createPost, listPosts } from "@/lib/services/post.service";
 import { createRateLimiter } from "@/lib/rate-limit";
 import { logActivity } from "@/lib/admin/logActivity";
 import { updateEnquiryStatus } from "@/lib/services/enquiry.service";
-
+import { upsertPostLedger } from "@/lib/services/postLedger.service";
 /** 10 post creations per IP per minute */
 const createLimiter = createRateLimiter({ windowMs: 60_000, max: 10 });
 
@@ -120,6 +120,9 @@ export async function POST(request: NextRequest) {
         createdByAdminClerkId: currentAdmin.clerkId,
       });
     }
+
+    // Sync to Google Sheets immediately after creation and any related records are saved
+    await upsertPostLedger(post.postId);
 
     await logActivity({
       admin: currentAdmin,

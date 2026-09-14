@@ -76,6 +76,8 @@ export interface IPostLedger extends Document {
 
   assignedTeacherStatus: string | null;
   source: string | null;
+  referrerName: string | null;
+  referrerPhone: string | null;
 
   // ─── New Tuitions-sheet fields ────────────────────────────────────────────
   /** Whether the post has been cancelled (Post.status === 'cancelled') */
@@ -145,6 +147,8 @@ const PostLedgerSchema = new Schema<IPostLedger>(
 
     assignedTeacherStatus: { type: String, default: null },
     source: { type: String, default: null },
+    referrerName: { type: String, default: null },
+    referrerPhone: { type: String, default: null },
 
     // ─── New Tuitions-sheet fields ──────────────────────────────────────────
     cancelledOrNot: { type: Boolean, default: false },

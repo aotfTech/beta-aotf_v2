@@ -107,6 +107,7 @@ export async function POST(req: Request) {
         "plan.hasTuitionAccess": true,
         "plan.hasCandidateAccess": toPlan === "teacher_candidate",
         "plan.activatedAt": new Date(),
+        paymentCompleted: true,
         onboardingCompleted: true,
         registrationPaymentId: payment._id,
         role: toPlan,

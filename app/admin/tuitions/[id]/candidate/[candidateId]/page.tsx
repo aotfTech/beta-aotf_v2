@@ -31,6 +31,9 @@ import {
   Trash2,
   XCircle,
   AlertCircle,
+  Save,
+  Cross,
+  X,
 } from "lucide-react";
 import { User } from "@heroui/user";
 import { formatDisplayDate, formatDisplayDateTime } from "@/lib/utils/display-date";
@@ -697,11 +700,10 @@ export default function CandidateDetailPage({
                     </div>
                     <div className="flex flex-col justify-center">
                       <h3
-                        className={`font-semibold ${
-                          isCompleted || isCurrent
+                        className={`font-semibold ${isCompleted || isCurrent
                             ? "text-default-900"
                             : "text-default-400"
-                        }`}
+                          }`}
                       >
                         {checkpoint.label}
                       </h3>
@@ -869,17 +871,19 @@ export default function CandidateDetailPage({
                 className="max-w-xs"
               />
               <Button
+                isIconOnly
                 id="save-starting-date-btn"
                 color="primary"
                 onPress={handleSaveStartingDate}
                 isLoading={isSavingStartingDate}
                 isDisabled={!startingDate}
               >
-                Save
+                <Save size={20} />
               </Button>
               {startingDate && (
                 <Button
-                  variant="light"
+                  isIconOnly
+                  variant="flat"
                   color="danger"
                   onPress={() => {
                     setStartingDate("");
@@ -887,7 +891,7 @@ export default function CandidateDetailPage({
                   }}
                   isDisabled={isSavingStartingDate}
                 >
-                  Clear
+                  <X size={20} />
                 </Button>
               )}
             </div>

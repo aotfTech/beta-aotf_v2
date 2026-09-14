@@ -126,7 +126,7 @@ export default async function DashboardPage({
 
   const ledgerRows = postItems.length
     ? await PostLedger.find({
-        postId: { $in: postItems.map((item) => item.postId) },
+        postId: postItems.map((item) => String(item.postId)),
       })
         .select("postId startingDate")
         .lean()

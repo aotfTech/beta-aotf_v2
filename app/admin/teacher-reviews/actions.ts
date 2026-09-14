@@ -35,8 +35,8 @@ async function verifyAdminPermission() {
   }
 
   const adminDoc = currentAdmin as any;
-  if (!adminDoc.isActive || !adminDoc.permissions?.canManageTeacherReviews) {
-    throw new Error("Forbidden: Missing canManageTeacherReviews permission");
+  if (!adminDoc.isActive) {
+    throw new Error("Forbidden: Admin is inactive");
   }
 }
 

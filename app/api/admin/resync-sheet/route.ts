@@ -119,13 +119,13 @@ export async function POST(req: NextRequest) {
     // 2) Clear sheet from row 1 downward (we'll rewrite headers too)
     await sheets.spreadsheets.values.clear({
       spreadsheetId,
-      range: `${TUITIONS_TAB}!A1:AA`,
+      range: `${TUITIONS_TAB}!A1:AD`,
     });
 
     // 3) Write header row
     await sheets.spreadsheets.values.update({
       spreadsheetId,
-      range: `${TUITIONS_TAB}!A1:AA1`,
+      range: `${TUITIONS_TAB}!A1:AD1`,
       valueInputOption: "USER_ENTERED",
       requestBody: { values: [TUITIONS_HEADERS] },
     });
@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
       const chunk = valuesRows.slice(i, i + CHUNK_SIZE);
       const chunkStartRow = startRow + i;
       const chunkEndRow = chunkStartRow + chunk.length - 1;
-      const range = `${TUITIONS_TAB}!A${chunkStartRow}:AA${chunkEndRow}`;
+      const range = `${TUITIONS_TAB}!A${chunkStartRow}:AD${chunkEndRow}`;
 
       await sheets.spreadsheets.values.batchUpdate({
         spreadsheetId,

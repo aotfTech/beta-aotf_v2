@@ -703,6 +703,7 @@ export default function Onboarding() {
             <Stepper
               className="mb-10"
               initialStep={initialStep}
+              step={currentStep}
               isStepAvailable={isStepAvailable}
               onStepChange={handleStepChange}
               validateStep={validateStep}

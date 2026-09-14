@@ -269,7 +269,7 @@ function Section({
           </Link>
         )}
       </div>
-      <div className="px-5 py-4">{children}</div>
+      <div className="px-2 py-1">{children}</div>
     </div>
   );
 }
@@ -470,33 +470,41 @@ export default function SuperAdminDashboard({
         title="Recent Admin Activity"
         action={{ label: "View audit log", href: "/admin/settings" }}
       >
-        <div className="space-y-2">
+        <div className="relative border-l border-zinc-200 dark:border-zinc-800 ml-3 space-y-6 py-4">
           {recentAuditLog.length === 0 ? (
-            <p className="text-sm text-zinc-400">No audit log entries yet</p>
+            <p className="text-sm text-zinc-400 pl-4">No audit log entries yet</p>
           ) : (
             recentAuditLog.map((log) => (
               <div
                 key={log._id}
-                className="flex items-center gap-3 py-2 border-b border-zinc-50 dark:border-zinc-800 last:border-0"
+                className="relative pl-6 group"
               >
-                <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0 mt-0.5" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-zinc-700 dark:text-zinc-300">
-                    <span className="font-medium">{log.adminUsername}</span>{" "}
-                    <span className="font-mono text-xs bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded">
-                      {log.action}
-                    </span>
-                    {log.targetIdentifier && (
-                      <span className="text-zinc-500">
-                        {" "}
-                        → {log.targetIdentifier}
+                {/* Timeline Dot */}
+                <div className="absolute -left-[5px] mt-1.5 w-2.5 h-2.5 rounded-full bg-white dark:bg-zinc-950 border-2 border-primary shadow-sm group-hover:scale-125 transition-transform" /> 
+                
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-zinc-800 dark:text-zinc-200 leading-snug">
+                      <span className="font-semibold">{log.adminUsername}</span>{" "}
+                      <span className="text-zinc-500 font-normal mx-1">performed</span>
+                      <span className="font-mono text-[11px] font-medium tracking-wide text-primary bg-primary/10 px-1.5 py-0.5 rounded-md border border-primary/20">
+                        {log.action}
                       </span>
+                    </p>
+                    {log.targetIdentifier && (
+                      <p className="text-xs text-zinc-500 mt-1.5 flex items-center gap-1.5 truncate">
+                        <span className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+                        {log.targetIdentifier}
+                      </p>
                     )}
-                  </p>
+                  </div>
+                  
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[11px] text-zinc-400 shrink-0 flex items-center gap-1 font-medium bg-zinc-50 dark:bg-zinc-900 px-2 py-1 rounded-md border border-zinc-100 dark:border-zinc-800">
+                      <Clock size={11} className="text-zinc-400" /> {relativeTime(log.createdAt)}
+                    </span>
+                  </div>
                 </div>
-                <span className="text-[10px] text-zinc-400 shrink-0 flex items-center gap-1">
-                  <Clock size={10} /> {relativeTime(log.createdAt)}
-                </span>
               </div>
             ))
           )}
