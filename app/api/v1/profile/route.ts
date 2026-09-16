@@ -136,7 +136,7 @@ export async function PATCH(req: Request) {
       if (!Array.isArray(subjects) || subjects.length === 0 || subjects.length > 20) {
         return NextResponse.json({ error: "Select at least one subject" }, { status: 400 });
       }
-      const uniqueSubjects = [...new Set(subjects)];
+      const uniqueSubjects = Array.from(new Set(subjects));
       const count = await Subject.countDocuments({
         $or: uniqueSubjects.map((key) => ({ key })),
       });

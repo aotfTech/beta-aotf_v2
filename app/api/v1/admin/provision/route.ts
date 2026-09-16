@@ -229,6 +229,7 @@ export async function POST(req: Request) {
           password: selectedPassword,
           firstName,
           lastName,
+          skipLegalChecks: true,
         });
       } catch (createError: unknown) {
         if (!isClerkDuplicateError(createError)) {
