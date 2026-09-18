@@ -72,7 +72,12 @@ const NAV_ITEMS: NavItem[] = [
     icon: Star,
     permission: "canHandleFeedbacks",
   },
-  { href: "/admin/reviews", label: "Reviews", icon: Star },
+  { 
+    href: "/admin/reviews", 
+    label: "Reviews", 
+    icon: Star,
+    permission: "canHandleFeedbacks"
+  },
   {
     href: "/admin/users",
     label: "Users",
@@ -95,9 +100,20 @@ const NAV_ITEMS: NavItem[] = [
     href: "/admin/teacher-reviews",
     label: "Teacher Reviews",
     icon: Star,
+    permission: "canManageTeacherReviews"
   },
-  { href: "/admin/ads", label: "Ads", icon: Megaphone },
-  { href: "/admin/invoices", label: "Invoices", icon: FileText },
+  { 
+    href: "/admin/ads", 
+    label: "Ads", 
+    icon: Megaphone,
+    permission: "canManagePosts"
+  },
+  { 
+    href: "/admin/invoices", 
+    label: "Invoices", 
+    icon: FileText,
+    permission: "canViewPayments"
+  },
   {
     href: "/admin/payments",
     label: "Payments",

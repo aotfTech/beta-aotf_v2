@@ -274,20 +274,6 @@ function AdminAccountsSection() {
             isSystemRole: true,
             level: 100,
           },
-          {
-            name: "admin",
-            displayName: "Admin",
-            permissions: [],
-            isSystemRole: true,
-            level: 50,
-          },
-          {
-            name: "support_admin",
-            displayName: "Support Admin",
-            permissions: [],
-            isSystemRole: true,
-            level: 10,
-          },
         ]);
       } finally {
         if (mounted) setIsLoadingRoles(false);
@@ -355,29 +341,25 @@ function AdminAccountsSection() {
     name: "",
     username: "",
     email: "",
-    role: "admin" as AdminRole,
+    role: "super_admin" as AdminRole,
     password: "",
     confirmPassword: "",
   });
   const [newAdminPermissions, setNewAdminPermissions] = useState<
     Record<AdminPermissionKey, boolean>
-  >(() => permissionsFromRole(roles, "admin"));
+  >(() => permissionsFromRole(roles, "super_admin"));
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
   const [addErrors, setAddErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!roles.length) return;
-    setNewAdminPermissions((prev) =>
-      mergePermissionState(permissionsFromRole(roles, newAdmin.role), prev),
-    );
+    setNewAdminPermissions(permissionsFromRole(roles, newAdmin.role));
   }, [roles, newAdmin.role]);
 
   useEffect(() => {
     if (!roles.length) return;
-    setNewRolePermissions((prev) =>
-      mergePermissionState(permissionsFromRole(roles, "admin"), prev),
-    );
+    setNewRolePermissions(permissionsFromRole(roles, "super_admin"));
   }, [roles]);
 
   const {
@@ -392,7 +374,7 @@ function AdminAccountsSection() {
   });
   const [newRolePermissions, setNewRolePermissions] = useState<
     Record<AdminPermissionKey, boolean>
-  >(() => permissionsFromRole(roles, "admin"));
+  >(() => permissionsFromRole(roles, "super_admin"));
 
   // Delete modal
   const {
@@ -429,7 +411,7 @@ function AdminAccountsSection() {
   const [permTarget, setPermTarget] = useState<AdminAccount | null>(null);
   const [permState, setPermState] = useState<
     Record<AdminPermissionKey, boolean>
-  >(() => permissionsFromRole(roles, "admin"));
+  >(() => permissionsFromRole(roles, "super_admin"));
   const [isSavingPerms, setIsSavingPerms] = useState(false);
 
   // Filtered admins
@@ -550,11 +532,11 @@ function AdminAccountsSection() {
         name: "",
         username: "",
         email: "",
-        role: "admin",
+        role: "super_admin",
         password: "",
         confirmPassword: "",
       });
-      setNewAdminPermissions(permissionsFromRole(roles, "admin"));
+      setNewAdminPermissions(permissionsFromRole(roles, "super_admin"));
       setAddErrors({});
       closeAdd();
     } catch (err) {
@@ -631,7 +613,7 @@ function AdminAccountsSection() {
 
       addToast({ description: "Role created successfully", color: "success" });
       setNewRole({ name: "", displayName: "" });
-      setNewRolePermissions(permissionsFromRole(roles, "admin"));
+      setNewRolePermissions(permissionsFromRole(roles, "super_admin"));
       closeRole();
     } catch (err) {
       reportClientError(err, { feature: "admin-settings" });

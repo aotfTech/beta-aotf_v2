@@ -2,7 +2,6 @@ import "@/styles/globals.css";
 import { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import clsx from "clsx";
-import { RootProvider } from "fumadocs-ui/provider/next";
 import { headers } from "next/headers";
 import Script from "next/script";
 
@@ -71,7 +70,7 @@ export default async function RootLayout({
 }) {
   const requestHeaders = await headers();
   const pathname = requestHeaders.get("x-aotf-pathname") ?? "/";
-  const showChrome = !pathname.startsWith("/docs");
+  const showChrome = true;
 
   return (
     <html suppressHydrationWarning lang="en">
@@ -100,13 +99,11 @@ export default async function RootLayout({
             },
           }}
         >
-          <RootProvider>
             <Providers
               themeProps={{ attribute: "class", defaultTheme: "light" }}
             >
               <SiteShell showChrome={showChrome}>{children}</SiteShell>
             </Providers>
-          </RootProvider>
         </ClerkProvider>
       </body>
     </html>

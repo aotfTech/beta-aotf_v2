@@ -27,6 +27,7 @@ import {
   Users,
   BadgeIndianRupee,
   MessageCircle,
+  Save,
 } from "lucide-react";
 import { months, sourceLists, yearOptions } from "@/lib/validations/forms";
 import { Accordion, AccordionItem } from "@heroui/accordion";
@@ -766,7 +767,7 @@ export default function PaymentDashboard() {
         </Select>
       </div>
 
-      <Card className="border-none bg-slate-50 shadow-none">
+      <Card className="border-none">
         <CardHeader className="flex  justify-between gap-2 px-2.5 py-2 sm:px-4 sm:py-3">
           {/* <div>
             <p className="text-sm font-semibold text-slate-950">
@@ -818,16 +819,16 @@ export default function PaymentDashboard() {
         <CardBody className="space-y-3 px-1 pt-0 sm:px-4 sm:pb-4">
           {/* ── Payout Calculator Section ───────────────────────────── */}
           {selectedAdminKey && selectedAdminKey !== "all" && (
-            <div className="rounded-2xl border border-dashed border-slate-200 bg-linear-to-br from-slate-50 to-indigo-50/30 p-3 space-y-3">
-              <div className="flex items-center gap-2">
+            <Card className="rounded-2xl border border-dashed border-slate-200 px-3 py-3 mx-3">
+              <CardHeader className="flex items-center gap-2 p-2">
                 <Percent size={14} className="text-indigo-600" />
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                <p className="text-xs font-semibold uppercase tracking-wide">
                   Payout Calculator
                 </p>
-              </div>
+              </CardHeader>
 
               {/* Percentage input + save */}
-              <div className="flex items-end gap-2">
+              <CardBody className="flex flex-row gap-2 px-0 py-1">
                 <Input
                   label="Payout %"
                   size="sm"
@@ -836,7 +837,7 @@ export default function PaymentDashboard() {
                   max={100}
                   step={0.5}
                   variant="bordered"
-                  className="max-w-35"
+                  className=""
                   value={payoutPctDraft[selectedAdminKey] ?? "0"}
                   onValueChange={(v) =>
                     setPayoutPctDraft((prev) => ({
@@ -844,33 +845,34 @@ export default function PaymentDashboard() {
                       [selectedAdminKey]: v,
                     }))
                   }
-                  endContent={<span className="text-xs text-slate-400">%</span>}
+                  endContent={<span className="text-xs">%</span>}
                 />
                 <Button
-                  size="sm"
+                  isIconOnly
+                  size="lg"
                   color="primary"
                   variant="flat"
                   isLoading={savingPct}
                   onPress={() => savePayoutPercentage(selectedAdminKey)}
                 >
-                  Save
+                  <Save size={24} />
                 </Button>
-              </div>
+              </CardBody>
 
               {/* Live calculation preview */}
-              <div className="rounded-xl bg-white px-3 py-2.5 shadow-sm space-y-1.5">
-                <div className="flex justify-between text-[11px] text-slate-500">
+              <CardBody className="rounded-xl py-2.5">
+                <div className="flex justify-between text-[11px]">
                   <span>
                     Total paid tuitions (
                     {selectedAdminStats?.tuitionPaidCount ?? 0})
                   </span>
-                  <span className="font-medium text-slate-900">
+                  <span className="font-medium">
                     ₹{selectedAdminPaidTotal.toLocaleString("en-IN")}
                   </span>
                 </div>
-                <div className="flex justify-between text-[11px] text-slate-500">
+                <div className="flex justify-between text-[11px]">
                   <span>Payout rate</span>
-                  <span className="font-medium text-slate-900">
+                  <span className="font-medium">
                     {payoutPctDraft[selectedAdminKey] ?? 0}%
                   </span>
                 </div>
@@ -889,7 +891,7 @@ export default function PaymentDashboard() {
                     })}
                   </span>
                 </div>
-              </div>
+              </CardBody>
 
               {/* Generate invoice button */}
               <Button
@@ -956,7 +958,7 @@ export default function PaymentDashboard() {
                   </div>
                 </div>
               )}
-            </div>
+            </Card>
           )}
 
           <div className="grid gap-3 lg:grid-cols-2">
@@ -1061,7 +1063,7 @@ export default function PaymentDashboard() {
             setSelectedSourceKey(value ?? sourceLists[0]?.key ?? "other");
           }}
           className="min-w-0"
-          variant="bordered" 
+          variant="bordered"
         >
           {sourceSelectItems}
         </Select>
@@ -1249,7 +1251,7 @@ export default function PaymentDashboard() {
         </CardHeader>
         <CardBody className="space-y-3 px-2.5 pt-0 sm:px-4 sm:pb-4">
           <div className="grid gap-3 lg:grid-cols-2">
-            <div className="rounded-2xl bg-slate-50 p-3">
+            <div className="rounded-2xl p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Tuition posts
               </p>
@@ -1298,7 +1300,7 @@ export default function PaymentDashboard() {
               </div>
             </div>
 
-            <div className="rounded-2xl bg-slate-50 p-3">
+            <div className="rounded-2xl p-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Jobs
               </p>

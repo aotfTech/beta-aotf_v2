@@ -7,7 +7,7 @@ import { ADMIN_PERMISSION_KEYS } from "@/lib/admin/admin-permissions";
 import { logActivity } from "@/lib/admin/logActivity";
 import { withApiErrorHandling } from "@/lib/api-utils";
 
-const SYSTEM_ROLES = ["super_admin", "admin", "support_admin"] as const;
+const SYSTEM_ROLES = ["super_admin"] as const;
 
 function toPermissionArray(input: Record<string, boolean> | undefined) {
   if (!input) return [] as string[];
@@ -29,8 +29,6 @@ async function ensureSystemRoles() {
 
   const defaultsByRole: Record<string, Record<string, boolean>> = {
     super_admin: Admin.getDefaultPermissions("super_admin"),
-    admin: Admin.getDefaultPermissions("admin"),
-    support_admin: Admin.getDefaultPermissions("support_admin"),
   };
 
   const insert = missing.map((name) => ({
@@ -39,7 +37,7 @@ async function ensureSystemRoles() {
       .split("_")
       .map((part) => part[0]?.toUpperCase() + part.slice(1))
       .join(" "),
-    level: name === "super_admin" ? 100 : name === "admin" ? 50 : 10,
+    level: name === "super_admin" ? 100 : 50,
     permissions: toPermissionArray(defaultsByRole[name]),
     isSystemRole: true,
   }));

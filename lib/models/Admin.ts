@@ -128,62 +128,7 @@ adminSchema.statics.getDefaultPermissions = function (role: string) {
         canTerminateAdmins: true,
         canViewAuditLogs: true,
       };
-    case "admin": // Sub-superadmin
-      return {
-        canManageUsers: false,
-        canBlockUsers: false,
-        canManagePosts: true,
-        canManageJobs: true,
-        canCreateTuitionPosts: true,
-        canCreateJobPosts: true,
-        canEditPosts: true,
-        canDeletePosts: true,
-        canManageWhatsAppGroups: false,
-        canHandleEnquiries: true,
-        canHandleFeedbacks: true,
-        canUpdateEnquiryStatus: true,
-        canCallApplicants: true,
-        canProcessRefunds: false,
-        canViewPayments: true,
-        canRecoverPayments: false,
-        canViewAnalytics: false,
-        canExportData: false,
-        canManageAdmins: true, // Can manage support admins only
-        canCreateAdmins: false, // Cannot create new admins
-        canEditAdmins: true, // Can edit support admins only
-        canDeactivateAdmins: true, // Can deactivate support admins only
-        canResetAdminPasswords: false,
-        canTerminateAdmins: false,
-        canViewAuditLogs: true,
-      };
-    case "support_admin": // Support
-      return {
-        canManageUsers: false,
-        canBlockUsers: false,
-        canManagePosts: false,
-        canManageJobs: false,
-        canCreateTuitionPosts: false,
-        canCreateJobPosts: false,
-        canEditPosts: false,
-        canDeletePosts: false,
-        canManageWhatsAppGroups: false,
-        canHandleEnquiries: true,
-        canHandleFeedbacks: true,
-        canUpdateEnquiryStatus: true,
-        canCallApplicants: true,
-        canProcessRefunds: false,
-        canViewPayments: false,
-        canRecoverPayments: false,
-        canViewAnalytics: false,
-        canExportData: false,
-        canManageAdmins: false,
-        canCreateAdmins: false,
-        canEditAdmins: false,
-        canDeactivateAdmins: false,
-        canResetAdminPasswords: false,
-        canTerminateAdmins: false,
-        canViewAuditLogs: false,
-      };
+
     default:
       return {};
   }

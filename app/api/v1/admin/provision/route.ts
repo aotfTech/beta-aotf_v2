@@ -63,18 +63,7 @@ function sanitizePermissionOverrides(overrides?: Record<string, boolean>) {
   }, {});
 }
 
-async function findClerkUser(
-  client: Awaited<ReturnType<typeof clerkClient>>,
-  params: { email: string; username: string },
-) {
-  const clerk = client as any;
-  const [byEmail, byUsername] = await Promise.all([
-    clerk.users.getUserList({ emailAddress: [params.email] }),
-    clerk.users.getUserList({ username: [params.username] }),
-  ]);
 
-  return byEmail.data[0] ?? byUsername.data[0] ?? null;
-}
 
 export async function POST(req: Request) {
   let clerkId = "";
@@ -184,8 +173,6 @@ export async function POST(req: Request) {
     // Create or reuse Clerk user
     const client = await clerkClient();
 
-    let newClerkUser;
-    let createdNewUser = false;
     const rolePermissions = roleDoc?.permissions ?? [];
     const defaultPermissions = isSystemRole
       ? Admin.getDefaultPermissions(normalizedRole)
@@ -199,110 +186,76 @@ export async function POST(req: Request) {
     };
     const aotfRole = mapAotfRole(normalizedRole);
 
-    const existing = await findClerkUser(client, {
-      email: normalizedEmail,
-      username: normalizedUsername,
-    });
-
-    if (existing) {
-      newClerkUser = existing;
-      await client.users.updateUser(newClerkUser.id, {
+    let newClerkUser;
+    
+    try {
+      newClerkUser = await client.users.createUser({
+        username: normalizedUsername,
+        emailAddress: [normalizedEmail],
+        password: selectedPassword,
         firstName,
         lastName,
+        skipLegalChecks: true,
       });
-      // Update metadata to mark as admin and set role/permissions
-      await client.users.updateUserMetadata(newClerkUser.id, {
-        publicMetadata: {
-          isAdmin: true,
-          role: normalizedRole,
-          aotfRole,
-          requirePasswordChange: false,
-          permissions: resolvedPermissions,
-        },
-      });
-    } else {
-      // No existing user, create one with a temporary password
-      try {
-        newClerkUser = await client.users.createUser({
-          username: normalizedUsername,
-          emailAddress: [normalizedEmail],
-          password: selectedPassword,
-          firstName,
-          lastName,
-          skipLegalChecks: true,
-        });
-      } catch (createError: unknown) {
-        if (!isClerkDuplicateError(createError)) {
-          throw createError;
-        }
-
-        const fallbackUser = await findClerkUser(client, {
-          email: normalizedEmail,
-          username: normalizedUsername,
-        });
-
-        if (fallbackUser) {
-          newClerkUser = fallbackUser;
-          await client.users.updateUser(newClerkUser.id, {
-            firstName,
-            lastName,
-          });
-        } else {
-          throw createError;
-        }
+    } catch (createError: unknown) {
+      if (isClerkDuplicateError(createError)) {
+        return NextResponse.json(
+          { error: "A user with this email or username already exists" },
+          { status: 409 },
+        );
       }
-
-      createdNewUser = Boolean(newClerkUser?.id);
-
-      await client.users.updateUserMetadata(newClerkUser.id, {
-        publicMetadata: {
-          isAdmin: true,
-          role: normalizedRole,
-          aotfRole,
-          requirePasswordChange: false,
-          permissions: resolvedPermissions,
-        },
-      });
+      throw createError;
     }
+
+    await client.users.updateUserMetadata(newClerkUser.id, {
+      publicMetadata: {
+        isAdmin: true,
+        role: normalizedRole,
+        aotfRole,
+        requirePasswordChange: false,
+        permissions: resolvedPermissions,
+      },
+    });
 
     const clerkUsername = (newClerkUser.username ?? normalizedUsername).toLowerCase();
     const clerkEmail =
       newClerkUser.emailAddresses[0]?.emailAddress?.toLowerCase() ??
       normalizedEmail;
 
-    // Create or update admin doc in MongoDB (upsert)
-    const admin = await Admin.findOneAndUpdate(
-      {
-        $or: [
-          { clerkId: newClerkUser.id },
-          { email: clerkEmail },
-          { username: clerkUsername },
-        ],
-      },
-      {
-        $set: {
-          clerkId: newClerkUser.id,
-          username: clerkUsername,
-          email: clerkEmail,
-          name,
-          role: normalizedRole,
-          permissions: resolvedPermissions,
-          isActive: true,
-          isLocked: false,
-          requirePasswordChange: false,
-          createdBy: requestingAdmin._id,
-        },
-      },
-      { upsert: true, returnDocument: "after" },
-    );
+    let admin;
+    try {
+      admin = await Admin.create({
+        clerkId: newClerkUser.id,
+        username: clerkUsername,
+        email: clerkEmail,
+        name,
+        role: normalizedRole,
+        permissions: resolvedPermissions,
+        isActive: true,
+        isLocked: false,
+        requirePasswordChange: false,
+        createdBy: requestingAdmin._id,
+      });
+    } catch (mongoError) {
+      // Rollback clerk user creation
+      await client.users.deleteUser(newClerkUser.id).catch(() => {});
+      if (isDuplicateKeyError(mongoError)) {
+        return NextResponse.json(
+          { error: "Admin already exists in database" },
+          { status: 409 },
+        );
+      }
+      throw mongoError;
+    }
 
     console.log(
       `[admin-provision] Admin ${name} (${email}) provisioned by ${clerkId}`,
     );
 
-    const responseBody: Record<string, unknown> = {
+    return NextResponse.json({
       success: true,
       adminId: admin._id,
+      tempPassword: selectedPassword,
       admin: {
         id: admin._id,
         username: admin.username,
@@ -312,115 +265,9 @@ export async function POST(req: Request) {
         isActive: admin.isActive,
         createdAt: admin.createdAt,
       },
-    };
-    if (createdNewUser) responseBody.tempPassword = selectedPassword;
-
-    return NextResponse.json(responseBody);
+    });
   } catch (error) {
     console.error("[admin-provision] Error:", error);
-
-    // If Clerk or Mongo reports a duplicate, try to reuse the existing record instead of failing.
-    if (clerkId && username && email && name && role) {
-      try {
-        const client = await clerkClient();
-        const existing = await findClerkUser(client, {
-          email: email.trim().toLowerCase(),
-          username: username.trim().toLowerCase(),
-        });
-
-        if (existing) {
-          const normalizedRole = role.trim().toLowerCase();
-          const roleDoc = await AdminRole.findOne({ name: normalizedRole }).lean();
-          const isSystemRole = ["super_admin", "admin", "support_admin"].includes(
-            normalizedRole,
-          );
-          const rolePermissions = roleDoc?.permissions ?? [];
-          const defaultPermissions = isSystemRole
-            ? Admin.getDefaultPermissions(normalizedRole)
-            : ADMIN_PERMISSION_KEYS.reduce<Record<string, boolean>>((acc, key) => {
-                acc[key] = rolePermissions.includes(key);
-                return acc;
-              }, {});
-          const resolvedPermissions = {
-            ...defaultPermissions,
-            ...sanitizePermissionOverrides(permissions),
-          };
-          const aotfRole = mapAotfRole(normalizedRole);
-          const { firstName, lastName } = splitName(name);
-          const clerkUsername = (existing.username ?? username.trim().toLowerCase()).toLowerCase();
-          const clerkEmail =
-            existing.emailAddresses[0]?.emailAddress?.toLowerCase() ??
-            email.trim().toLowerCase();
-
-          await client.users.updateUser(existing.id, {
-            firstName,
-            lastName,
-          });
-          await client.users.updateUserMetadata(existing.id, {
-            publicMetadata: {
-              isAdmin: true,
-              role: normalizedRole,
-              aotfRole,
-              requirePasswordChange: false,
-              permissions: resolvedPermissions,
-            },
-          });
-
-          const admin = await Admin.findOneAndUpdate(
-            {
-              $or: [
-                { clerkId: existing.id },
-                { email: clerkEmail },
-                { username: clerkUsername },
-              ],
-            },
-            {
-              $set: {
-                clerkId: existing.id,
-                username: clerkUsername,
-                email: clerkEmail,
-                name,
-                role: normalizedRole,
-                permissions: resolvedPermissions,
-                isActive: true,
-                isLocked: false,
-                requirePasswordChange: false,
-                createdBy: null,
-              },
-            },
-            { upsert: true, returnDocument: "after" },
-          );
-
-          return NextResponse.json({
-            success: true,
-            adminId: admin?._id,
-            admin: admin
-              ? {
-                  id: admin._id,
-                  username: admin.username,
-                  email: admin.email,
-                  name: admin.name,
-                  role: admin.role,
-                  isActive: admin.isActive,
-                  createdAt: admin.createdAt,
-                }
-              : undefined,
-          });
-        }
-      } catch (fallbackError) {
-        console.warn("[admin-provision] Duplicate fallback failed:", fallbackError);
-      }
-    }
-
-    if (isDuplicateKeyError(error) && clerkId && username && email && name && role) {
-      return NextResponse.json(
-        {
-          error: "Admin already exists with one of those identifiers",
-        },
-        { status: 409 },
-      );
-    }
-
     reportError(error, { route: "POST /api/v1/admin/provision" });
     
     const errObj = error as any;

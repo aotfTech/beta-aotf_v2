@@ -1,4 +1,3 @@
-import { createMDX } from "fumadocs-mdx/next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 /** @type {import('next').NextConfig} */
@@ -114,12 +113,7 @@ const nextConfig = {
   },
 };
 
-const withMDX = createMDX({
-  // customize the config file path
-  // configPath: "source.config.ts"
-});
-
-export default withSentryConfig(withMDX(nextConfig), {
+export default withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 

@@ -1,7 +1,5 @@
 @import "tailwindcss";
-@import 'fumadocs-ui/css/neutral.css';
-@import 'fumadocs-ui/css/preset.css';
-@import 'fumadocs-ui/css/generated/docs.css';
+
 
 @utility -inset-s-4 {
 	inset-inline-start: calc(var(--spacing) * -4);
