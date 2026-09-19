@@ -3,7 +3,8 @@ import { Metadata, Viewport } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import clsx from "clsx";
 import { headers } from "next/headers";
-import Script from "next/script";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 import { Providers } from "./providers";
 
@@ -74,13 +75,6 @@ export default async function RootLayout({
 
   return (
     <html suppressHydrationWarning lang="en">
-      <head>
-        <Script
-          src="https://cloud.umami.is/script.js"
-          data-website-id="bbf2495e-d085-44a8-a36f-bfcf0f11421d"
-          strategy="afterInteractive"
-        />
-      </head>
       <body
         className={clsx(
           "text-foreground bg-background font-sans antialiased min-h-screen flex flex-col",
@@ -105,6 +99,8 @@ export default async function RootLayout({
               <SiteShell showChrome={showChrome}>{children}</SiteShell>
             </Providers>
         </ClerkProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

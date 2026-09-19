@@ -2,10 +2,6 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 /** @type {import('next').NextConfig} */
 const DEFAULT_CLERK_ORIGINS = [
-  "https://*.clerk.accounts.dev",
-  "https://*.clerk.dev",
-  "https://clerk.aotf.sayantanbal.in",
-  "https://clerk.beta.aotf.in",
   "https://clerk.aotf.in",
   "https://www.aotf.in",
   "https://aotf.in",
